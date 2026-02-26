@@ -1,0 +1,3143 @@
+<!DOCTYPE html>
+<!-- saved from url=(0063)file:///C:/Users/ssaro/Downloads/technician-queue-system_3.html -->
+<html lang="th"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TechQueue — ระบบจัดคิวช่าง</title>
+<link href="./technician-queue-system Ver.2_files/css2" rel="stylesheet">
+<script src="./technician-queue-system Ver.2_files/chart.umd.min.js.download"></script>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #151820;
+    --surface2: #1c2030;
+    --surface3: #242840;
+    --accent: #4f8ef7;
+    --accent2: #7c5cf5;
+    --success: #22d3a5;
+    --warning: #f5a623;
+    --danger: #f75454;
+    --text: #e8eaf2;
+    --text2: #8890b0;
+    --text3: #555d7a;
+    --border: #2a2f48;
+    --glow: rgba(79,142,247,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* LAYOUT */
+  .app { display: flex; height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+
+  .logo {
+    padding: 24px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; }
+  .logo-text span { color: var(--accent); }
+
+  .nav { padding: 16px 12px; flex: 1; }
+  .nav-label { font-size: 10px; letter-spacing: 1.5px; color: var(--text3); text-transform: uppercase; padding: 8px 8px 6px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 14px;
+    transition: all 0.2s;
+    margin-bottom: 2px;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(79,142,247,0.15); color: var(--accent); }
+  .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: white;
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  .sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text3);
+  }
+  .live-dot {
+    display: inline-block; width: 6px; height: 6px;
+    background: var(--success); border-radius: 50%;
+    margin-right: 6px;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+  /* MAIN */
+  .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 5;
+  }
+  .page-title { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 20px; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #3a7de0; transform: translateY(-1px); }
+  .btn-outline { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .btn-outline:hover { background: var(--surface2); color: var(--text); }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-success { background: var(--success); color: #0d2e25; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-warning { background: var(--warning); color: #2e1e00; }
+
+  .content { padding: 28px; flex: 1; }
+
+  /* PAGE SECTIONS */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* STATS ROW */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: var(--accent); }
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 14px 14px 0 0;
+  }
+  .stat-card.green::before { background: linear-gradient(90deg, var(--success), #18a87f); }
+  .stat-card.orange::before { background: linear-gradient(90deg, var(--warning), #e08c0e); }
+  .stat-card.red::before { background: linear-gradient(90deg, var(--danger), #c43a3a); }
+  .stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; margin-bottom: 4px; }
+  .stat-label { color: var(--text2); font-size: 13px; }
+  .stat-change { font-size: 12px; margin-top: 8px; }
+  .stat-change.up { color: var(--success); }
+  .stat-change.down { color: var(--danger); }
+  .stat-icon { position: absolute; right: 16px; top: 20px; font-size: 28px; opacity: 0.15; }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-title { font-weight: 600; font-size: 15px; }
+  .card-body { padding: 20px; }
+
+  /* JOB LIST */
+  .job-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 14px;
+    transition: all 0.2s;
+    cursor: pointer;
+    position: relative;
+  }
+  .job-item:hover { border-color: var(--accent); background: var(--surface3); }
+  .job-item.urgent { border-left: 3px solid var(--danger); }
+  .job-item.normal { border-left: 3px solid var(--accent); }
+  .job-item.low { border-left: 3px solid var(--text3); }
+
+  .job-num {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text3);
+    width: 50px;
+    flex-shrink: 0;
+  }
+  .job-info { flex: 1; }
+  .job-customer { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .job-desc { font-size: 12px; color: var(--text2); }
+  .job-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .tag-blue { background: rgba(79,142,247,0.2); color: var(--accent); }
+  .tag-green { background: rgba(34,211,165,0.2); color: var(--success); }
+  .tag-orange { background: rgba(245,166,35,0.2); color: var(--warning); }
+  .tag-red { background: rgba(247,84,84,0.2); color: var(--danger); }
+  .tag-gray { background: rgba(136,144,176,0.15); color: var(--text2); }
+
+  .job-status { text-align: right; flex-shrink: 0; }
+  .status-badge {
+    display: inline-block;
+    font-size: 11px; font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 6px;
+  }
+  .status-waiting { background: rgba(245,166,35,0.2); color: var(--warning); }
+  .status-assigned { background: rgba(79,142,247,0.2); color: var(--accent); }
+  .status-traveling { background: rgba(124,92,245,0.2); color: #a48bff; }
+  .status-working { background: rgba(34,211,165,0.2); color: var(--success); }
+  .status-done { background: rgba(136,144,176,0.15); color: var(--text2); }
+
+  .job-time { font-size: 11px; color: var(--text3); }
+  .job-actions { display: flex; gap: 6px; margin-top: 4px; }
+
+  /* TECHNICIAN CARDS */
+  .tech-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .tech-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s;
+  }
+  .tech-card:hover { border-color: var(--accent); }
+  .tech-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .tech-avatar {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+    flex-shrink: 0;
+  }
+  .tech-name { font-weight: 600; font-size: 14px; }
+  .tech-skill { font-size: 11px; color: var(--text2); margin-top: 1px; }
+  .tech-status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    margin-left: auto; flex-shrink: 0;
+  }
+  .dot-free { background: var(--success); box-shadow: 0 0 6px var(--success); animation: pulse 1.5s infinite; }
+  .dot-busy { background: var(--warning); }
+  .dot-traveling { background: #a48bff; }
+  .dot-offline { background: var(--text3); }
+
+  .tech-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+  .tech-stat { text-align: center; background: var(--surface3); border-radius: 8px; padding: 8px; }
+  .tech-stat-val { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; }
+  .tech-stat-lbl { font-size: 10px; color: var(--text2); margin-top: 2px; }
+  .tech-current { font-size: 11px; color: var(--text2); margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .tech-current strong { color: var(--text); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 520px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.2s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-title { font-weight: 700; font-size: 16px; }
+  .modal-close { background: none; border: none; color: var(--text2); font-size: 20px; cursor: pointer; }
+  .modal-body { padding: 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* FORM */
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text2); }
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .form-select option { background: var(--surface2); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* CHART */
+  .chart-container { position: relative; height: 220px; }
+
+  /* TABLE */
+  .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .table th {
+    text-align: left;
+    padding: 10px 14px;
+    color: var(--text2);
+    font-size: 11px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+  }
+  .table td { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .table tr:last-child td { border-bottom: none; }
+  .table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* PROGRESS */
+  .progress-bar { background: var(--surface3); border-radius: 100px; height: 6px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 100px; transition: width 0.5s ease; }
+
+  /* TIMELINE */
+  .timeline { padding: 0; }
+  .timeline-item { display: flex; gap: 12px; margin-bottom: 16px; position: relative; }
+  .timeline-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .timeline-line { position: absolute; left: 4px; top: 14px; bottom: -12px; width: 2px; background: var(--border); }
+  .timeline-item:last-child .timeline-line { display: none; }
+  .timeline-content { flex: 1; }
+  .timeline-title { font-size: 13px; font-weight: 600; }
+  .timeline-time { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* TOAST */
+  .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 999; }
+  .toast {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    margin-top: 8px;
+    font-size: 13px;
+    display: flex; align-items: center; gap: 10px;
+    animation: toastIn 0.3s ease;
+    min-width: 280px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  @keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .toast.success { border-left: 3px solid var(--success); }
+  .toast.error { border-left: 3px solid var(--danger); }
+  .toast.info { border-left: 3px solid var(--accent); }
+
+  /* KANBAN */
+  .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .kanban-col { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+  .kanban-head { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .kanban-col-title { font-weight: 600; font-size: 13px; }
+  .kanban-count { background: var(--surface3); border-radius: 20px; padding: 2px 8px; font-size: 12px; color: var(--text2); }
+  .kanban-body { padding: 12px; min-height: 200px; }
+  .kanban-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .kanban-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .kanban-card-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .kanban-card-meta { font-size: 11px; color: var(--text2); }
+  .kanban-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+
+  /* ===== DAILY SCHEDULE / TIMELINE GANTT ===== */
+  .schedule-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .schedule-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .schedule-header-left { display: flex; align-items: center; gap: 14px; }
+  .schedule-legend { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+  .schedule-inner { overflow-x: auto; }
+  .schedule-grid { min-width: 900px; }
+
+  .schedule-timebar {
+    display: grid;
+    padding: 0 0 0 160px;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 2;
+    background: var(--surface2);
+  }
+  .time-cell {
+    font-size: 10px;
+    color: var(--text3);
+    padding: 6px 0 6px 4px;
+    border-left: 1px solid var(--border);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 500;
+  }
+  .time-cell.now-col { color: var(--danger); border-left-color: var(--danger); }
+
+  .schedule-row {
+    display: flex;
+    align-items: stretch;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    min-height: 52px;
+  }
+  .schedule-row:last-child { border-bottom: none; }
+  .schedule-row:hover { background: rgba(255,255,255,0.015); }
+
+  .tech-label {
+    width: 160px;
+    min-width: 160px;
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 8px;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky; left: 0; z-index: 1;
+  }
+  .tech-label-avatar {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .tech-label-info { flex: 1; overflow: hidden; }
+  .tech-label-name { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tech-label-count { font-size: 10px; color: var(--text3); margin-top: 1px; }
+
+  .schedule-cells {
+    flex: 1;
+    position: relative;
+    display: grid;
+    align-items: center;
+  }
+  .schedule-bg-col {
+    position: absolute; top: 0; bottom: 0;
+    border-left: 1px solid var(--border);
+    pointer-events: none;
+  }
+  .schedule-bg-col.now-line {
+    border-left: 2px dashed var(--danger);
+    z-index: 3;
+  }
+  .schedule-bg-col.now-line::before {
+    content: '';
+    position: absolute; top: 0; left: -1px;
+    width: 2px; height: 100%;
+    background: linear-gradient(180deg, var(--danger), transparent);
+    opacity: 0.4;
+  }
+
+  .job-block {
+    position: absolute;
+    height: 34px;
+    border-radius: 7px;
+    display: flex; align-items: center;
+    padding: 0 8px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    transition: filter 0.15s, transform 0.15s;
+    z-index: 2;
+    border: 1px solid rgba(255,255,255,0.1);
+    top: 50%; transform: translateY(-50%);
+  }
+  .job-block:hover { filter: brightness(1.25); transform: translateY(calc(-50% - 1px)); z-index: 4; }
+  .job-block-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .job-block .priority-pip {
+    width: 4px; height: 4px; border-radius: 50%;
+    flex-shrink: 0; margin-right: 5px;
+  }
+
+  .free-slot {
+    position: absolute;
+    height: 34px;
+    border-radius: 7px;
+    background: rgba(34,211,165,0.07);
+    border: 1px dashed rgba(34,211,165,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: rgba(34,211,165,0.5);
+    pointer-events: none;
+    top: 50%; transform: translateY(-50%);
+  }
+
+  /* overload banner */
+  .overload-bar {
+    background: linear-gradient(90deg, rgba(247,84,84,0.12), transparent);
+    border-left: 3px solid var(--danger);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 16px;
+    margin: 0 20px 16px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px;
+  }
+  .overload-bar strong { color: var(--danger); }
+
+  .capacity-strip {
+    display: flex; padding: 8px 0 0 160px;
+    border-top: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .cap-cell {
+    flex: 1;
+    text-align: center;
+    font-size: 9px;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .cap-bar { height: 4px; margin: 2px 2px 4px; border-radius: 2px; transition: width 0.3s; }
+
+  .now-label {
+    position: absolute;
+    top: -18px;
+    transform: translateX(-50%);
+    font-size: 9px;
+    color: var(--danger);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 1200px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+    .tech-grid { grid-template-columns: repeat(2, 1fr); }
+    .kanban { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .filter-bar {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-btn.active, .filter-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
+  .search-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 14px;
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 13px;
+    outline: none;
+    width: 200px;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text3); }
+
+  @keyframes blockPulse {
+    0%,100% { opacity:1; }
+    50% { opacity:0.65; }
+  }
+
+  /* ===== SLA / BACKLOG TABLE ===== */
+  .sla-table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .sla-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+  }
+  .sla-header-left { display: flex; align-items: center; gap: 12px; }
+  .sla-summary { display: flex; gap: 16px; }
+  .sla-sum-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+  .sla-sum-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .sla-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .sla-table th {
+    text-align: left; padding: 10px 16px;
+    color: var(--text2); font-size: 11px;
+    letter-spacing: 0.8px; text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600; background: var(--surface2);
+    white-space: nowrap;
+  }
+  .sla-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .sla-table tr:last-child td { border-bottom: none; }
+  .sla-table tbody tr { transition: background 0.15s; cursor: pointer; }
+  .sla-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* SLA countdown pill */
+  .sla-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+    white-space: nowrap;
+  }
+  .sla-overdue   { background: rgba(247,84,84,0.18);  color: var(--danger);  border: 1px solid rgba(247,84,84,0.3);  }
+  .sla-critical  { background: rgba(245,166,35,0.18); color: var(--warning); border: 1px solid rgba(245,166,35,0.3); }
+  .sla-warning   { background: rgba(245,166,35,0.10); color: var(--warning); border: 1px solid rgba(245,166,35,0.2); }
+  .sla-ok        { background: rgba(34,211,165,0.12); color: var(--success); border: 1px solid rgba(34,211,165,0.2); }
+
+  .sla-overdue-row td { background: rgba(247,84,84,0.04) !important; }
+  .sla-critical-row td { background: rgba(245,166,35,0.03) !important; }
+
+  .assign-btn {
+    padding: 5px 12px; border-radius: 6px;
+    background: rgba(79,142,247,0.15); color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; font-family: 'Sarabun', sans-serif;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .assign-btn:hover { background: var(--accent); color: white; }
+
+  .sla-empty { text-align: center; padding: 32px; color: var(--text3); font-size: 13px; }
+
+  /* SLA badge on nav */
+  .nav-badge-red { background: var(--danger); }
+
+
+  /* ===== ADD JOB FORM ELEMENTS ===== */
+  .job-type-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-top: 2px;
+  }
+  .job-type-btn {
+    padding: 8px 6px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Sarabun', sans-serif;
+  }
+  .job-type-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .job-type-btn.active { background: rgba(79,142,247,0.15); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+
+  .urgent-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-top: 2px;
+  }
+  .urgent-btn {
+    padding: 8px 6px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Sarabun', sans-serif;
+  }
+  .urgent-btn.low.active   { background: rgba(136,144,176,0.15); border-color: var(--text3);  color: var(--text2); }
+  .urgent-btn.normal.active { background: rgba(79,142,247,0.15);  border-color: var(--accent); color: var(--accent); }
+  .urgent-btn.urgent.active { background: rgba(247,84,84,0.15);   border-color: var(--danger); color: var(--danger); }
+  .urgent-btn:not(.active):hover { border-color: var(--text2); color: var(--text); }
+
+  .tech-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    min-height: 52px;
+    align-items: center;
+  }
+  .tech-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface3);
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+    font-family: 'Sarabun', sans-serif;
+  }
+  .tech-chip:hover { border-color: var(--accent); }
+  .tech-chip.selected { border-color: var(--accent); background: rgba(79,142,247,0.15); color: var(--text); }
+  .tech-chip .chip-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .tech-chip .chip-check { font-size: 10px; display: none; }
+  .tech-chip.selected .chip-check { display: inline; }
+
+  .mode-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 2px;
+  }
+  .mode-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Sarabun', sans-serif;
+  }
+  .mode-btn:hover { border-color: var(--accent); }
+  .mode-btn.active { background: rgba(79,142,247,0.15); border-color: var(--accent); color: var(--accent); }
+
+
+  /* Cancel reason buttons */
+  .cancel-reason-btn {
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Sarabun', sans-serif;
+  }
+  .cancel-reason-btn:hover { border-color: var(--danger); color: var(--danger); }
+  .cancel-reason-btn.active { background: rgba(247,84,84,0.15); border-color: var(--danger); color: var(--danger); font-weight: 700; }
+
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🔧</div>
+      <div class="logo-text">Tech<span>Queue</span></div>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">เมนูหลัก</div>
+      <div class="nav-item active" onclick="showPage(&#39;dashboard&#39;)">
+        <span class="icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage(&#39;queue&#39;)">
+        <span class="icon">📋</span> คิวงาน
+        <span class="nav-badge" id="queueBadge">9</span>
+      </div>
+      <div class="nav-item" onclick="showPage(&#39;kanban&#39;)">
+        <span class="icon">🗂️</span> Kanban Board
+      </div>
+      <div class="nav-label">จัดการ</div>
+      <div class="nav-item" onclick="showPage(&#39;technicians&#39;)">
+        <span class="icon">👷</span> ช่าง
+      </div>
+      <div class="nav-item" onclick="showPage(&#39;report&#39;)">
+        <span class="icon">📈</span> รายงาน
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="live-dot"></span> ระบบออนไลน์ • อัปเดต Real-time<br>
+      <span id="connectionStatus" style="font-size:11px;margin-top:4px;display:block;color:var(--text3);">⚪ ใช้ข้อมูล Local</span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title" id="pageTitle">📊 Dashboard</div>
+      <div class="topbar-right">
+        <span style="font-size:13px; color:var(--text2);" id="currentDate">วันพฤหัสบดีที่ 26 กุมภาพันธ์ 2569</span>
+        <button class="btn btn-primary" onclick="openAddJobModal()">+ เพิ่มงานใหม่</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD PAGE -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-icon">📋</div>
+            <div class="stat-value" id="statTotal">15</div>
+            <div class="stat-label">งานทั้งหมดวันนี้</div>
+            <div class="stat-change up" id="statTotalChange">↑ 0%</div>
+          </div>
+
+          <div class="stat-card green">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value" id="statDone">4</div>
+            <div class="stat-label">งานเสร็จแล้ว</div>
+            <div class="stat-change up">อัตราสำเร็จ: <span id="statRate">27%</span></div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-value" id="statPending">11</div>
+            <div class="stat-label">รอดำเนินการ</div>
+            <div class="stat-change" id="statUrgent" style="color:var(--danger);">⚠️ ด่วน 5 งาน</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-icon">👷</div>
+            <div class="stat-value" id="statAvail">2</div>
+            <div class="stat-label">ช่างว่างงาน</div>
+            <div class="stat-change" style="color:var(--text2);">จากทั้งหมด <span id="statTechTotal">4</span> คน</div>
+          </div>
+        </div>
+
+        <!-- DAILY SCHEDULE -->
+        <div class="schedule-wrap" id="scheduleSection">
+          <div class="schedule-header">
+            <div class="schedule-header-left">
+              <div class="card-title">📅 ตารางงานวันนี้ — รายละเอียดช่วงเวลา</div>
+              <div class="schedule-legend">
+                <div class="legend-item"><div class="legend-dot" style="background:#4f8ef7"></div> Assigned</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#a48bff"></div> เดินทาง</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#22d3a5"></div> กำลังทำ</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#555d7a"></div> เสร็จแล้ว</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#f75454;border-radius:50%"></div> ด่วน</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span id="overloadFlag" style="display: inline-block;" class="tag tag-red">⚠️ งาน Overload</span>
+              <button class="btn btn-outline btn-sm" onclick="scrollScheduleToNow()">🕐 ตอนนี้</button>
+            </div>
+          </div>
+          <div id="overloadBanner" style="display: flex;" class="overload-bar">
+            <span style="font-size:18px">⚠️</span>
+            <span id="overloadMsg">⚠️ ช่างที่งานซ้อนกัน: สมชาย, ประสิทธิ์ — ควรจัดสรรงานใหม่</span>
+          </div>
+          <div class="schedule-inner" id="scheduleInner">
+            <div class="schedule-grid" id="scheduleGrid"><div class="schedule-timebar" style="grid-template-columns: repeat(15, 1fr); position:relative;"><div class="time-cell ">06:00</div><div class="time-cell ">07:00</div><div class="time-cell ">08:00</div><div class="time-cell ">09:00</div><div class="time-cell ">10:00</div><div class="time-cell ">11:00</div><div class="time-cell ">12:00</div><div class="time-cell ">13:00</div><div class="time-cell ">14:00</div><div class="time-cell ">15:00</div><div class="time-cell ">16:00</div><div class="time-cell ">17:00</div><div class="time-cell ">18:00</div><div class="time-cell ">19:00</div><div class="time-cell ">20:00</div></div>
+    <div class="schedule-row">
+      <div class="tech-label">
+        <div class="tech-label-avatar" style="background:#4f8ef722;color:#4f8ef7">👨‍🔧</div>
+        <div class="tech-label-info">
+          <div class="tech-label-name">สมชาย</div>
+          <div class="tech-label-count">3 งาน</div>
+        </div>
+        <div style="width:7px;height:7px;border-radius:50%;background:#22d3a5;flex-shrink:0"></div>
+      </div>
+      <div class="schedule-cells" style="position:relative;">
+        <div class="schedule-bg-col" style="left:0%"></div><div class="schedule-bg-col" style="left:7.142857142857142%"></div><div class="schedule-bg-col" style="left:14.285714285714285%"></div><div class="schedule-bg-col" style="left:21.428571428571427%"></div><div class="schedule-bg-col" style="left:28.57142857142857%"></div><div class="schedule-bg-col" style="left:35.714285714285715%"></div><div class="schedule-bg-col" style="left:42.857142857142854%"></div><div class="schedule-bg-col" style="left:50%"></div><div class="schedule-bg-col" style="left:57.14285714285714%"></div><div class="schedule-bg-col" style="left:64.28571428571429%"></div><div class="schedule-bg-col" style="left:71.42857142857143%"></div><div class="schedule-bg-col" style="left:78.57142857142857%"></div><div class="schedule-bg-col" style="left:85.71428571428571%"></div><div class="schedule-bg-col" style="left:92.85714285714286%"></div><div class="schedule-bg-col" style="left:100%"></div>
+        <div class="free-slot" style="left:50%;width:50%">ว่าง</div>
+        <div class="job-block" style="left:0%;width:23.214285714285715%;background:#555d7a22;border-color:#555d7a66;color:#555d7a;;box-shadow:0 0 0 1px #555d7a33 inset;" onclick="openJobDetail(&#39;JOB-006&#39;)" title="[JOB-006] คุณเขียว ธรรมชาติ
+ซ่อมแอร์ | Onsite
+⏰ 06:00 – 09:15
+สถานะ: done">
+        <span class="job-block-label" style="font-size:11px;">คุณเขียว · ซ่อมแอร์</span>
+      </div><div class="job-block" style="left:12.5%;width:19.642857142857142%;background:#555d7a22;border-color:#555d7a66;color:#555d7a;;box-shadow:0 0 0 1px #555d7a33 inset;" onclick="openJobDetail(&#39;JOB-003&#39;)" title="[JOB-003] ร้านกาแฟ The Brew
+ซ่อมเครื่องใช้ไฟฟ้า | Onsite
+⏰ 07:45 – 10:30
+สถานะ: done">
+        <span class="job-block-label" style="font-size:11px;">ร้านกาแฟ · ซ่อมเครื่องใช้ไฟฟ้า</span>
+      </div><div class="job-block" style="left:39.285714285714285%;width:10.714285714285714%;background:#4f8ef722;border-color:#4f8ef766;color:#4f8ef7;;box-shadow:0 0 0 1px #4f8ef733 inset;" onclick="openJobDetail(&#39;JOB-010&#39;)" title="[JOB-010] คุณฟ้า สดใส
+ติดตั้ง | Onsite
+⏰ 11:30 – 13:00
+สถานะ: assigned">
+        <span class="job-block-label" style="font-size:11px;">คุณฟ้า · ติดตั้ง</span>
+      </div>
+      </div>
+    </div>
+    <div class="schedule-row">
+      <div class="tech-label">
+        <div class="tech-label-avatar" style="background:#22d3a522;color:#22d3a5">👩‍🔧</div>
+        <div class="tech-label-info">
+          <div class="tech-label-name">มานะ</div>
+          <div class="tech-label-count">2 งาน</div>
+        </div>
+        <div style="width:7px;height:7px;border-radius:50%;background:#f5a623;flex-shrink:0"></div>
+      </div>
+      <div class="schedule-cells" style="position:relative;">
+        <div class="schedule-bg-col" style="left:0%"></div><div class="schedule-bg-col" style="left:7.142857142857142%"></div><div class="schedule-bg-col" style="left:14.285714285714285%"></div><div class="schedule-bg-col" style="left:21.428571428571427%"></div><div class="schedule-bg-col" style="left:28.57142857142857%"></div><div class="schedule-bg-col" style="left:35.714285714285715%"></div><div class="schedule-bg-col" style="left:42.857142857142854%"></div><div class="schedule-bg-col" style="left:50%"></div><div class="schedule-bg-col" style="left:57.14285714285714%"></div><div class="schedule-bg-col" style="left:64.28571428571429%"></div><div class="schedule-bg-col" style="left:71.42857142857143%"></div><div class="schedule-bg-col" style="left:78.57142857142857%"></div><div class="schedule-bg-col" style="left:85.71428571428571%"></div><div class="schedule-bg-col" style="left:92.85714285714286%"></div><div class="schedule-bg-col" style="left:100%"></div>
+        <div class="free-slot" style="left:39.285714285714285%;width:60.714285714285715%">ว่าง</div>
+        <div class="job-block" style="left:7.142857142857142%;width:10.714285714285714%;background:#555d7a22;border-color:#555d7a66;color:#555d7a;;box-shadow:0 0 0 1px #555d7a33 inset;" onclick="openJobDetail(&#39;JOB-007&#39;)" title="[JOB-007] คุณม่วง เพชรน้ำงาม
+ซ่อมไฟฟ้า | Onsite
+⏰ 07:00 – 08:30
+สถานะ: done">
+        <span class="job-block-label" style="font-size:11px;">คุณม่วง · ซ่อมไฟฟ้า</span>
+      </div><div class="job-block" style="left:21.428571428571427%;width:17.857142857142858%;background:#a48bff22;border-color:#a48bff66;color:#a48bff;animation:blockPulse 2s ease-in-out infinite;;box-shadow:0 0 0 1px #a48bff33 inset;" onclick="openJobDetail(&#39;JOB-002&#39;)" title="[JOB-002] คุณดำ ดีใจ
+ซ่อมไฟฟ้า | Onsite
+⏰ 09:00 – 11:30
+สถานะ: traveling">
+        <span class="job-block-label" style="font-size:11px;">คุณดำ · ซ่อมไฟฟ้า</span>
+      </div>
+      </div>
+    </div>
+    <div class="schedule-row">
+      <div class="tech-label">
+        <div class="tech-label-avatar" style="background:#f5a62322;color:#f5a623">🧑‍🔧</div>
+        <div class="tech-label-info">
+          <div class="tech-label-name">วิชัย</div>
+          <div class="tech-label-count">2 งาน</div>
+        </div>
+        <div style="width:7px;height:7px;border-radius:50%;background:#a48bff;flex-shrink:0"></div>
+      </div>
+      <div class="schedule-cells" style="position:relative;">
+        <div class="schedule-bg-col" style="left:0%"></div><div class="schedule-bg-col" style="left:7.142857142857142%"></div><div class="schedule-bg-col" style="left:14.285714285714285%"></div><div class="schedule-bg-col" style="left:21.428571428571427%"></div><div class="schedule-bg-col" style="left:28.57142857142857%"></div><div class="schedule-bg-col" style="left:35.714285714285715%"></div><div class="schedule-bg-col" style="left:42.857142857142854%"></div><div class="schedule-bg-col" style="left:50%"></div><div class="schedule-bg-col" style="left:57.14285714285714%"></div><div class="schedule-bg-col" style="left:64.28571428571429%"></div><div class="schedule-bg-col" style="left:71.42857142857143%"></div><div class="schedule-bg-col" style="left:78.57142857142857%"></div><div class="schedule-bg-col" style="left:85.71428571428571%"></div><div class="schedule-bg-col" style="left:92.85714285714286%"></div><div class="schedule-bg-col" style="left:100%"></div>
+        <div class="free-slot" style="left:32.142857142857146%;width:67.85714285714286%">ว่าง</div>
+        <div class="job-block" style="left:3.571428571428571%;width:10.714285714285714%;background:#555d7a22;border-color:#555d7a66;color:#555d7a;;box-shadow:0 0 0 1px #555d7a33 inset;" onclick="openJobDetail(&#39;JOB-008&#39;)" title="[JOB-008] คุณส้ม อร่อยดี
+ซ่อมประปา | Onsite
+⏰ 06:30 – 08:00
+สถานะ: done">
+        <span class="job-block-label" style="font-size:11px;">คุณส้ม · ซ่อมประปา</span>
+      </div><div class="job-block" style="left:17.857142857142858%;width:14.285714285714285%;background:#22d3a522;border-color:#22d3a566;color:#22d3a5;animation:blockPulse 2s ease-in-out infinite;;box-shadow:0 0 0 1px #22d3a533 inset;" onclick="openJobDetail(&#39;JOB-001&#39;)" title="[JOB-001] คุณแดง สมบูรณ์
+ซ่อมแอร์ | Onsite
+⏰ 08:30 – 10:30
+สถานะ: working">
+        <span class="job-block-label" style="font-size:11px;">🔴 คุณแดง · ซ่อมแอร์</span>
+      </div>
+      </div>
+    </div>
+    <div class="schedule-row">
+      <div class="tech-label">
+        <div class="tech-label-avatar" style="background:#a48bff22;color:#a48bff">👷</div>
+        <div class="tech-label-info">
+          <div class="tech-label-name">ประสิทธิ์</div>
+          <div class="tech-label-count">2 งาน</div>
+        </div>
+        <div style="width:7px;height:7px;border-radius:50%;background:#22d3a5;flex-shrink:0"></div>
+      </div>
+      <div class="schedule-cells" style="position:relative;">
+        <div class="schedule-bg-col" style="left:0%"></div><div class="schedule-bg-col" style="left:7.142857142857142%"></div><div class="schedule-bg-col" style="left:14.285714285714285%"></div><div class="schedule-bg-col" style="left:21.428571428571427%"></div><div class="schedule-bg-col" style="left:28.57142857142857%"></div><div class="schedule-bg-col" style="left:35.714285714285715%"></div><div class="schedule-bg-col" style="left:42.857142857142854%"></div><div class="schedule-bg-col" style="left:50%"></div><div class="schedule-bg-col" style="left:57.14285714285714%"></div><div class="schedule-bg-col" style="left:64.28571428571429%"></div><div class="schedule-bg-col" style="left:71.42857142857143%"></div><div class="schedule-bg-col" style="left:78.57142857142857%"></div><div class="schedule-bg-col" style="left:85.71428571428571%"></div><div class="schedule-bg-col" style="left:92.85714285714286%"></div><div class="schedule-bg-col" style="left:100%"></div>
+        <div class="free-slot" style="left:78.57142857142857%;width:21.42857142857143%">ว่าง</div>
+        <div class="job-block" style="left:35.714285714285715%;width:28.57142857142857%;background:#4f8ef722;border-color:#4f8ef766;color:#4f8ef7;;box-shadow:0 0 0 1px #4f8ef733 inset;" onclick="openJobDetail(&#39;JOB-005&#39;)" title="[JOB-005] บริษัท เอบีซี จำกัด
+ติดตั้ง | Onsite
+⏰ 11:00 – 15:00
+สถานะ: assigned">
+        <span class="job-block-label" style="font-size:11px;">บริษัท · ติดตั้ง</span>
+      </div><div class="job-block" style="left:50%;width:28.57142857142857%;background:#4f8ef722;border-color:#4f8ef766;color:#4f8ef7;;box-shadow:0 0 0 1px #4f8ef733 inset;" onclick="openJobDetail(&#39;JOB-009&#39;)" title="[JOB-009] โรงแรม Grand Stay
+ซ่อมแอร์ | Onsite
+⏰ 13:00 – 17:00
+สถานะ: assigned">
+        <span class="job-block-label" style="font-size:11px;">🔴 โรงแรม · ซ่อมแอร์</span>
+      </div>
+      </div>
+    </div><div class="capacity-strip"><div class="cap-cell" title="6:00 — 2/4 งาน">
+      <div class="cap-bar" style="background:#22d3a5;width:50%"></div>
+      <span style="color:#22d3a5">2</span>
+    </div><div class="cap-cell" title="7:00 — 4/4 งาน">
+      <div class="cap-bar" style="background:#f75454;width:100%"></div>
+      <span style="color:#f75454">4</span>
+    </div><div class="cap-cell" title="8:00 — 4/4 งาน">
+      <div class="cap-bar" style="background:#f75454;width:100%"></div>
+      <span style="color:#f75454">4</span>
+    </div><div class="cap-cell" title="9:00 — 4/4 งาน">
+      <div class="cap-bar" style="background:#f75454;width:100%"></div>
+      <span style="color:#f75454">4</span>
+    </div><div class="cap-cell" title="10:00 — 4/4 งาน">
+      <div class="cap-bar" style="background:#f75454;width:100%"></div>
+      <span style="color:#f75454">4</span>
+    </div><div class="cap-cell" title="11:00 — 4/4 งาน">
+      <div class="cap-bar" style="background:#f75454;width:100%"></div>
+      <span style="color:#f75454">4</span>
+    </div><div class="cap-cell" title="12:00 — 2/4 งาน">
+      <div class="cap-bar" style="background:#22d3a5;width:50%"></div>
+      <span style="color:#22d3a5">2</span>
+    </div><div class="cap-cell" title="13:00 — 2/4 งาน">
+      <div class="cap-bar" style="background:#22d3a5;width:50%"></div>
+      <span style="color:#22d3a5">2</span>
+    </div><div class="cap-cell" title="14:00 — 2/4 งาน">
+      <div class="cap-bar" style="background:#22d3a5;width:50%"></div>
+      <span style="color:#22d3a5">2</span>
+    </div><div class="cap-cell" title="15:00 — 1/4 งาน">
+      <div class="cap-bar" style="background:#22d3a5;width:25%"></div>
+      <span style="color:#22d3a5">1</span>
+    </div><div class="cap-cell" title="16:00 — 1/4 งาน">
+      <div class="cap-bar" style="background:#22d3a5;width:25%"></div>
+      <span style="color:#22d3a5">1</span>
+    </div><div class="cap-cell" title="17:00 — 0/4 งาน">
+      <div class="cap-bar" style="background:#22d3a5;width:0%"></div>
+      <span style="color:#555d7a">0</span>
+    </div><div class="cap-cell" title="18:00 — 0/4 งาน">
+      <div class="cap-bar" style="background:#22d3a5;width:0%"></div>
+      <span style="color:#555d7a">0</span>
+    </div><div class="cap-cell" title="19:00 — 0/4 งาน">
+      <div class="cap-bar" style="background:#22d3a5;width:0%"></div>
+      <span style="color:#555d7a">0</span>
+    </div></div></div>
+          </div>
+        </div>
+
+        <!-- SLA / BACKLOG TABLE -->
+        <div class="sla-table-wrap" id="slaSection">
+          <div class="sla-header">
+            <div class="sla-header-left">
+              <div class="card-title">🚨 งานค้างคิว — เกิน SLA / รอช่างว่าง</div>
+              <div class="sla-summary" id="slaSummary">
+    <div class="sla-sum-item"><div class="sla-sum-dot" style="background:var(--danger)"></div>3 เกินกำหนด</div>
+    
+    <div class="sla-sum-item"><div class="sla-sum-dot" style="background:var(--text3)"></div>5 งานรอช่าง</div>
+  </div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="openAddJobModal()">+ เพิ่มงานใหม่</button>
+          </div>
+          <div id="overloadBannerSLA" style="display:none;" class="overload-bar">
+            <span style="font-size:18px">🚨</span>
+            <span id="slaOverloadMsg"></span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="sla-table">
+              <thead>
+                <tr>
+                  <th>งาน</th>
+                  <th>ลูกค้า / ที่อยู่</th>
+                  <th>ประเภท</th>
+                  <th>SLA</th>
+                  <th>Deadline</th>
+                  <th>เหลือเวลา</th>
+                  <th>⚡ Assign ช่าง</th>
+                </tr>
+              </thead>
+              <tbody id="slaTableBody"><tr class="sla-overdue-row" onclick="openJobDetail(&#39;JOB-011&#39;)">
+      <td>
+        <div style="font-family:&#39;Space Grotesk&#39;,sans-serif;font-size:12px;font-weight:700;color:var(--text3)">JOB-011</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">ซ่อมแอร์</div>
+      </td>
+      <td>
+        <div style="font-weight:600;font-size:13px">ห้างสรรพสินค้า Central</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">📍 1 ถ.รัชดาฯ ห้วยขวาง กรุงเทพ...</div>
+      </td>
+      <td>
+        <span class="tag" style="background:#f7545422;color:#f75454;font-size:11px;font-weight:700">
+          P1 — ด่วนมาก
+        </span>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">ต้องเสร็จใน 3ชม.</div>
+      </td>
+      <td>
+        <div style="font-weight:600;font-size:13px">09:00 วันนี้</div>
+      </td>
+      <td>
+        <span class="sla-pill sla-overdue">🔴 -11ชม. 56น.</span>
+      </td>
+      <td>
+        <span class="status-badge status-waiting">รอรับงาน</span>
+      </td>
+      <td onclick="event.stopPropagation()">
+        <select class="form-select" style="padding:4px 8px;font-size:12px;width:auto;" onchange="quickAssign(&#39;JOB-011&#39;, this.value); this.value=&#39;&#39;">
+               <option value="">⚡ Assign ช่าง</option>
+               <option value="1">👨‍🔧 สมชาย</option><option value="4">👷 ประสิทธิ์</option>
+             </select>
+      </td>
+    </tr><tr class="sla-overdue-row" onclick="openJobDetail(&#39;JOB-012&#39;)">
+      <td>
+        <div style="font-family:&#39;Space Grotesk&#39;,sans-serif;font-size:12px;font-weight:700;color:var(--text3)">JOB-012</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">ซ่อมไฟฟ้า</div>
+      </td>
+      <td>
+        <div style="font-weight:600;font-size:13px">โรงพยาบาล เมดิคอล</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">📍 55 ถ.พระราม 4 คลองเตย กรุงเทพ...</div>
+      </td>
+      <td>
+        <span class="tag" style="background:#f7545422;color:#f75454;font-size:11px;font-weight:700">
+          P1 — ด่วนมาก
+        </span>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">ต้องเสร็จใน 3ชม.</div>
+      </td>
+      <td>
+        <div style="font-weight:600;font-size:13px">10:00 วันนี้</div>
+      </td>
+      <td>
+        <span class="sla-pill sla-overdue">🔴 -10ชม. 56น.</span>
+      </td>
+      <td>
+        <span class="status-badge status-waiting">รอรับงาน</span>
+      </td>
+      <td onclick="event.stopPropagation()">
+        <select class="form-select" style="padding:4px 8px;font-size:12px;width:auto;" onchange="quickAssign(&#39;JOB-012&#39;, this.value); this.value=&#39;&#39;">
+               <option value="">⚡ Assign ช่าง</option>
+               <option value="1">👨‍🔧 สมชาย</option><option value="4">👷 ประสิทธิ์</option>
+             </select>
+      </td>
+    </tr><tr class="sla-overdue-row" onclick="openJobDetail(&#39;JOB-013&#39;)">
+      <td>
+        <div style="font-family:&#39;Space Grotesk&#39;,sans-serif;font-size:12px;font-weight:700;color:var(--text3)">JOB-013</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">ซ่อมประปา</div>
+      </td>
+      <td>
+        <div style="font-weight:600;font-size:13px">ร้านอาหาร Siam Bistro</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">📍 22 ถ.สยาม ปทุมวัน กรุงเทพ...</div>
+      </td>
+      <td>
+        <span class="tag" style="background:#f5a62322;color:#f5a623;font-size:11px;font-weight:700">
+          P2 — ด่วน
+        </span>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">ต้องเสร็จใน 8ชม.</div>
+      </td>
+      <td>
+        <div style="font-weight:600;font-size:13px">14:00 วันนี้</div>
+      </td>
+      <td>
+        <span class="sla-pill sla-overdue">🔴 -6ชม. 56น.</span>
+      </td>
+      <td>
+        <span class="status-badge status-waiting">รอรับงาน</span>
+      </td>
+      <td onclick="event.stopPropagation()">
+        <select class="form-select" style="padding:4px 8px;font-size:12px;width:auto;" onchange="quickAssign(&#39;JOB-013&#39;, this.value); this.value=&#39;&#39;">
+               <option value="">⚡ Assign ช่าง</option>
+               <option value="1">👨‍🔧 สมชาย</option><option value="4">👷 ประสิทธิ์</option>
+             </select>
+      </td>
+    </tr><tr class="" onclick="openJobDetail(&#39;JOB-014&#39;)">
+      <td>
+        <div style="font-family:&#39;Space Grotesk&#39;,sans-serif;font-size:12px;font-weight:700;color:var(--text3)">JOB-014</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">ติดตั้ง</div>
+      </td>
+      <td>
+        <div style="font-weight:600;font-size:13px">บริษัท DataTech จำกัด</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">📍 88 ถ.อโศก วัฒนา กรุงเทพ...</div>
+      </td>
+      <td>
+        <span class="tag" style="background:#f5a62322;color:#f5a623;font-size:11px;font-weight:700">
+          P2 — ด่วน
+        </span>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">ต้องเสร็จใน 24ชม.</div>
+      </td>
+      <td>
+        <div style="font-weight:600;font-size:13px">12:00 พรุ่งนี้</div>
+      </td>
+      <td>
+        <span class="sla-pill sla-ok">🟢 15ชม. 3น.</span>
+      </td>
+      <td>
+        <span class="status-badge status-waiting">รอรับงาน</span>
+      </td>
+      <td onclick="event.stopPropagation()">
+        <select class="form-select" style="padding:4px 8px;font-size:12px;width:auto;" onchange="quickAssign(&#39;JOB-014&#39;, this.value); this.value=&#39;&#39;">
+               <option value="">⚡ Assign ช่าง</option>
+               <option value="1">👨‍🔧 สมชาย</option><option value="4">👷 ประสิทธิ์</option>
+             </select>
+      </td>
+    </tr><tr class="" onclick="openJobDetail(&#39;JOB-015&#39;)">
+      <td>
+        <div style="font-family:&#39;Space Grotesk&#39;,sans-serif;font-size:12px;font-weight:700;color:var(--text3)">JOB-015</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">ซ่อมทั่วไป</div>
+      </td>
+      <td>
+        <div style="font-weight:600;font-size:13px">คอนโด The Loft</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">📍 100 ถ.สุขุมวิท 71 วัฒนา กรุงเทพ...</div>
+      </td>
+      <td>
+        <span class="tag" style="background:#8890b022;color:#8890b0;font-size:11px;font-weight:700">
+          P3 — ปกติ
+        </span>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">ต้องเสร็จใน 48ชม.</div>
+      </td>
+      <td>
+        <div style="font-weight:600;font-size:13px">18:00 พรุ่งนี้</div>
+      </td>
+      <td>
+        <span class="sla-pill sla-ok">🟢 21ชม. 3น.</span>
+      </td>
+      <td>
+        <span class="status-badge status-waiting">รอรับงาน</span>
+      </td>
+      <td onclick="event.stopPropagation()">
+        <select class="form-select" style="padding:4px 8px;font-size:12px;width:auto;" onchange="quickAssign(&#39;JOB-015&#39;, this.value); this.value=&#39;&#39;">
+               <option value="">⚡ Assign ช่าง</option>
+               <option value="1">👨‍🔧 สมชาย</option><option value="4">👷 ประสิทธิ์</option>
+             </select>
+      </td>
+    </tr></tbody>
+            </table>
+            <div id="slaEmpty" class="sla-empty" style="display:none;">✅ ไม่มีงานค้างคิว — ทุกอย่างอยู่ในกำหนด SLA</div>
+          </div>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">งานในสัปดาห์นี้</div>
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="weekChart" width="1023" height="220" style="display: block; box-sizing: border-box; height: 220px; width: 1023px;"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">สถานะงานปัจจุบัน</div>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="height:180px;">
+                <canvas id="statusChart" width="490" height="180" style="display: block; box-sizing: border-box; height: 180px; width: 490px;"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">งานล่าสุด</div>
+              <button class="btn btn-outline btn-sm" onclick="showPage(&#39;queue&#39;)">ดูทั้งหมด →</button>
+            </div>
+            <div class="card-body" style="padding:0;">
+              <div id="recentJobs" style="padding:12px;">
+  <div class="job-item low" onclick="openJobDetail(&#39;JOB-010&#39;)">
+    <div class="job-num">JOB-010</div>
+    <div class="job-info">
+      <div class="job-customer">คุณฟ้า สดใส</div>
+      <div class="job-desc">ติดตั้ง — 22 ถ.พระราม 9 ห้วยขวาง กรุงเทพ...</div>
+      <div class="job-meta">
+        <span class="tag tag-gray">⚪ ไม่เร่ง</span>
+        <span class="tag tag-gray">ติดตั้ง</span>
+        
+        <span class="tag" style="background:#4f8ef722;color:#4f8ef7">👨‍🔧 สมชาย</span>
+        
+      </div>
+    </div>
+    <div class="job-status">
+      <div class="status-badge status-assigned">Assigned</div>
+      <div class="job-time">🕐 11:30</div>
+    </div>
+  </div>
+  <div class="job-item low" onclick="openJobDetail(&#39;JOB-015&#39;)">
+    <div class="job-num">JOB-015</div>
+    <div class="job-info">
+      <div class="job-customer">คอนโด The Loft</div>
+      <div class="job-desc">ซ่อมทั่วไป — 100 ถ.สุขุมวิท 71 วัฒนา กรุงเทพ...</div>
+      <div class="job-meta">
+        <span class="tag tag-gray">⚪ ไม่เร่ง</span>
+        <span class="tag tag-gray">ซ่อมทั่วไป</span>
+        
+        <span class="tag tag-gray">ยังไม่มอบหมาย</span>
+        
+      </div>
+    </div>
+    <div class="job-status">
+      <div class="status-badge status-waiting">รอรับงาน</div>
+      <div class="job-time">🕐 10:00</div>
+    </div>
+  </div>
+  <div class="job-item normal" onclick="openJobDetail(&#39;JOB-014&#39;)">
+    <div class="job-num">JOB-014</div>
+    <div class="job-info">
+      <div class="job-customer">บริษัท DataTech จำกัด</div>
+      <div class="job-desc">ติดตั้ง — 88 ถ.อโศก วัฒนา กรุงเทพ...</div>
+      <div class="job-meta">
+        <span class="tag tag-blue">🔵 ปกติ</span>
+        <span class="tag tag-gray">ติดตั้ง</span>
+        
+        <span class="tag tag-gray">ยังไม่มอบหมาย</span>
+        
+      </div>
+    </div>
+    <div class="job-status">
+      <div class="status-badge status-waiting">รอรับงาน</div>
+      <div class="job-time">🕐 09:00</div>
+    </div>
+  </div>
+  <div class="job-item normal" onclick="openJobDetail(&#39;JOB-013&#39;)">
+    <div class="job-num">JOB-013</div>
+    <div class="job-info">
+      <div class="job-customer">ร้านอาหาร Siam Bistro</div>
+      <div class="job-desc">ซ่อมประปา — 22 ถ.สยาม ปทุมวัน กรุงเทพ...</div>
+      <div class="job-meta">
+        <span class="tag tag-blue">🔵 ปกติ</span>
+        <span class="tag tag-gray">ซ่อมประปา</span>
+        
+        <span class="tag tag-gray">ยังไม่มอบหมาย</span>
+        
+      </div>
+    </div>
+    <div class="job-status">
+      <div class="status-badge status-waiting">รอรับงาน</div>
+      <div class="job-time">🕐 08:00</div>
+    </div>
+  </div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">ประสิทธิภาพช่าง (วันนี้)</div>
+            </div>
+            <div class="card-body" style="padding:0;">
+              <table class="table" id="techPerformTable">
+                <thead>
+                  <tr>
+                    <th>ช่าง</th>
+                    <th>งานเสร็จ</th>
+                    <th>กำลังทำ</th>
+                    <th>ประสิทธิภาพ</th>
+                  </tr>
+                </thead>
+                <tbody id="techPerfBody"><tr>
+      <td><span style="color:#4f8ef7">👨‍🔧</span> สมชาย</td>
+      <td><span class="tag tag-green">2</span></td>
+      <td><span class="tag tag-blue">1</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="progress-bar" style="width:80px;">
+            <div class="progress-fill" style="width:67%;background:var(--warning)"></div>
+          </div>
+          <span style="font-size:12px;color:var(--text2)">67%</span>
+        </div>
+      </td>
+    </tr><tr>
+      <td><span style="color:#22d3a5">👩‍🔧</span> มานะ</td>
+      <td><span class="tag tag-green">1</span></td>
+      <td><span class="tag tag-blue">1</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="progress-bar" style="width:80px;">
+            <div class="progress-fill" style="width:50%;background:var(--warning)"></div>
+          </div>
+          <span style="font-size:12px;color:var(--text2)">50%</span>
+        </div>
+      </td>
+    </tr><tr>
+      <td><span style="color:#f5a623">🧑‍🔧</span> วิชัย</td>
+      <td><span class="tag tag-green">1</span></td>
+      <td><span class="tag tag-blue">1</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="progress-bar" style="width:80px;">
+            <div class="progress-fill" style="width:50%;background:var(--warning)"></div>
+          </div>
+          <span style="font-size:12px;color:var(--text2)">50%</span>
+        </div>
+      </td>
+    </tr><tr>
+      <td><span style="color:#a48bff">👷</span> ประสิทธิ์</td>
+      <td><span class="tag tag-green">0</span></td>
+      <td><span class="tag tag-blue">2</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="progress-bar" style="width:80px;">
+            <div class="progress-fill" style="width:0%;background:var(--danger)"></div>
+          </div>
+          <span style="font-size:12px;color:var(--text2)">0%</span>
+        </div>
+      </td>
+    </tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+
+        /div&gt;
+
+      </div>
+
+      <!-- QUEUE PAGE -->
+      <div class="page" id="page-queue">
+        <div class="filter-bar">
+          <button class="filter-btn active" onclick="filterJobs(&#39;all&#39;, this)">ทั้งหมด</button>
+          <button class="filter-btn" onclick="filterJobs(&#39;waiting&#39;, this)">รอรับงาน</button>
+          <button class="filter-btn" onclick="filterJobs(&#39;assigned&#39;, this)">Assigned</button>
+          <button class="filter-btn" onclick="filterJobs(&#39;traveling&#39;, this)">เดินทาง</button>
+          <button class="filter-btn" onclick="filterJobs(&#39;working&#39;, this)">กำลังทำ</button>
+          <button class="filter-btn" onclick="filterJobs(&#39;done&#39;, this)">เสร็จแล้ว</button>
+          <input type="text" class="search-input" placeholder="🔍 ค้นหางาน..." oninput="searchJobs(this.value)" style="margin-left:auto;">
+        </div>
+        <div id="jobList"></div>
+      </div>
+
+      <!-- KANBAN PAGE -->
+      <div class="page" id="page-kanban">
+        <div class="kanban" id="kanbanBoard"></div>
+      </div>
+
+      <!-- TECHNICIANS PAGE -->
+      <div class="page" id="page-technicians">
+        <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:14px; color:var(--text2);">จัดการทีมช่างของคุณ</div>
+          <button class="btn btn-primary" onclick="openAddTechModal()">+ เพิ่มช่างใหม่</button>
+        </div>
+        <div class="tech-grid" id="techGrid"></div>
+      </div>
+
+      <!-- REPORT PAGE -->
+      <div class="page" id="page-report">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-icon">📋</div>
+            <div class="stat-value" id="rptTotal">0</div>
+            <div class="stat-label">งานทั้งหมดเดือนนี้</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value" id="rptDone">0</div>
+            <div class="stat-label">งานสำเร็จ</div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-value" id="rptRating">4.7</div>
+            <div class="stat-label">คะแนนเฉลี่ย</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⏱️</div>
+            <div class="stat-value" id="rptAvgTime">2.3h</div>
+            <div class="stat-label">เวลาเฉลี่ยต่องาน</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><div class="card-title">แนวโน้มงาน 30 วัน</div></div>
+            <div class="card-body">
+              <div class="chart-container" style="height:240px;">
+                <canvas id="monthChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">ประเภทงานยอดนิยม</div></div>
+            <div class="card-body">
+              <div class="chart-container" style="height:240px;">
+                <canvas id="typeChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">สรุปประสิทธิภาพช่างประจำเดือน</div>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <table class="table" id="monthlyPerfTable">
+              <thead>
+                <tr>
+                  <th>ช่าง</th>
+                  <th>งานทั้งหมด</th>
+                  <th>งานเสร็จ</th>
+                  <th>อัตราสำเร็จ</th>
+                  <th>เวลาเฉลี่ย</th>
+                  <th>คะแนน</th>
+                </tr>
+              </thead>
+              <tbody id="monthlyPerfBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODAL: Add Job -->
+<div class="modal-overlay" id="addJobModal">
+  <div class="modal" style="width:600px;">
+    <div class="modal-header">
+      <div class="modal-title">➕ เพิ่มงานใหม่</div>
+      <button class="modal-close" onclick="closeModal(&#39;addJobModal&#39;)">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Customer Name <span style="color:var(--danger)">*</span></label>
+          <input type="text" class="form-input" id="fCustomer" placeholder="ชื่อลูกค้า">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tel.</label>
+          <input type="text" class="form-input" id="fPhone" placeholder="08x-xxx-xxxx">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Location</label>
+          <input type="text" class="form-input" id="fAddress" placeholder="สถานที่ / ที่อยู่">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Client</label>
+          <input type="text" class="form-input" id="fClient" placeholder="ชื่อกลุ่มลูกค้า / บริษัท">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Job Type <span style="color:var(--danger)">*</span></label>
+          <div class="job-type-grid" id="fTypeGrid">
+            <div class="job-type-btn active" data-value="ตรวจสอบ" onclick="selectJobType(this)">🔍 ตรวจสอบ</div>
+            <div class="job-type-btn" data-value="ซ่อม" onclick="selectJobType(this)">🔧 ซ่อม</div>
+            <div class="job-type-btn" data-value="แก้ไข" onclick="selectJobType(this)">✏️ แก้ไข</div>
+            <div class="job-type-btn" data-value="เปลี่ยนใหม่" onclick="selectJobType(this)">🔄 เปลี่ยนใหม่</div>
+            <div class="job-type-btn" data-value="ติดตั้ง" onclick="selectJobType(this)">⚙️ ติดตั้ง</div>
+            <div class="job-type-btn" data-value="อื่นๆ" onclick="selectJobType(this)">📝 อื่นๆ</div>
+          </div>
+          <input type="hidden" id="fType" value="ตรวจสอบ">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Urgent</label>
+          <div class="urgent-grid" id="fUrgentGrid">
+            <div class="urgent-btn low" data-value="low" onclick="selectUrgent(this)">⚪ ไม่เร่งด่วน</div>
+            <div class="urgent-btn normal active" data-value="normal" onclick="selectUrgent(this)">🔵 ปกติ</div>
+            <div class="urgent-btn urgent" data-value="urgent" onclick="selectUrgent(this)">🔴 เร่งด่วน</div>
+          </div>
+          <input type="hidden" id="fPriority" value="normal">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Technician <span style="color:var(--text3);font-weight:400;font-size:11px;">(เลือกได้หลายคน)</span></label>
+        <div class="tech-picker" id="fTechPicker"></div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Online / Onsite</label>
+        <div class="mode-grid" id="fModeGrid">
+          <div class="mode-btn" data-value="Online" onclick="selectMode(this)">
+            <span style="font-size:18px">💻</span>
+            <span>Online</span>
+          </div>
+          <div class="mode-btn active" data-value="Onsite" onclick="selectMode(this)">
+            <span style="font-size:18px">🚗</span>
+            <span>Onsite</span>
+          </div>
+        </div>
+        <input type="hidden" id="fMode" value="Onsite">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Detail</label>
+        <textarea class="form-textarea" id="fDesc" placeholder="รายละเอียดงาน อาการเสีย หรือสิ่งที่ต้องการ..."></textarea>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal(&#39;addJobModal&#39;)">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="addJob()">✓ บันทึกงาน</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Job Detail -->
+<div class="modal-overlay" id="jobDetailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="detailTitle">รายละเอียดงาน</div>
+      <button class="modal-close" onclick="closeModal(&#39;jobDetailModal&#39;)">✕</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-footer" id="detailFooter"></div>
+  </div>
+</div>
+
+<!-- MODAL: Add Tech -->
+<div class="modal-overlay" id="addTechModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">👷 เพิ่มช่างใหม่</div>
+      <button class="modal-close" onclick="closeModal(&#39;addTechModal&#39;)">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">ชื่อช่าง *</label>
+          <input type="text" class="form-input" id="tName" placeholder="ชื่อ-นามสกุล">
+        </div>
+        <div class="form-group">
+          <label class="form-label">เบอร์โทร</label>
+          <input type="text" class="form-input" id="tPhone" placeholder="08x-xxx-xxxx">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ความเชี่ยวชาญ</label>
+        <input type="text" class="form-input" id="tSkill" placeholder="เช่น ไฟฟ้า, ประปา, เครื่องยนต์">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal(&#39;addTechModal&#39;)">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="addTech()">✓ เพิ่มช่าง</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL: Edit Job -->
+<div class="modal-overlay" id="editJobModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✏️ แก้ไขงาน <span id="editJobId" style="color:var(--text3);font-size:13px;font-weight:400"></span></div>
+      <button class="modal-close" onclick="closeModal(&#39;editJobModal&#39;)">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">ชื่อลูกค้า *</label>
+          <input type="text" class="form-input" id="eCustomer" placeholder="ชื่อลูกค้า">
+        </div>
+        <div class="form-group">
+          <label class="form-label">เบอร์โทรศัพท์</label>
+          <input type="text" class="form-input" id="ePhone" placeholder="08x-xxx-xxxx">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ที่อยู่</label>
+        <input type="text" class="form-input" id="eAddress">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">ประเภทงาน</label>
+          <select class="form-select" id="eType">
+            <option value="ซ่อมไฟฟ้า">ซ่อมไฟฟ้า</option>
+            <option value="ซ่อมประปา">ซ่อมประปา</option>
+            <option value="ซ่อมเครื่องใช้ไฟฟ้า">ซ่อมเครื่องใช้ไฟฟ้า</option>
+            <option value="ซ่อมแอร์">ซ่อมแอร์</option>
+            <option value="ซ่อมทั่วไป">ซ่อมทั่วไป</option>
+            <option value="ติดตั้ง">ติดตั้ง</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ความเร่งด่วน</label>
+          <select class="form-select" id="ePriority">
+            <option value="normal">ปกติ</option>
+            <option value="urgent">ด่วน</option>
+            <option value="low">ไม่เร่ง</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">มอบหมายให้ช่าง</label>
+        <select class="form-select" id="eTech">
+          <option value="">— ยังไม่มอบหมาย —</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">เวลาเริ่มงาน</label>
+          <input type="time" class="form-input" id="eTimeStart">
+        </div>
+        <div class="form-group">
+          <label class="form-label">เวลาสิ้นสุด (ประมาณ)</label>
+          <input type="time" class="form-input" id="eEstEnd">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">SLA ระดับ</label>
+          <select class="form-select" id="eSla">
+            <option value="">— ไม่กำหนด —</option>
+            <option value="P1">P1 — ด่วนมาก (3 ชม.)</option>
+            <option value="P2">P2 — ด่วน (8 ชม.)</option>
+            <option value="P3">P3 — ปกติ (48 ชม.)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Deadline</label>
+          <input type="datetime-local" class="form-input" id="eDeadline">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">รายละเอียดงาน</label>
+        <textarea class="form-textarea" id="eDesc"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="deleteJob()" style="margin-right:auto;">🗑️ ลบงาน</button>
+      <button class="btn btn-outline" onclick="closeModal(&#39;editJobModal&#39;)">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveEditJob()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL: Confirm Delete Tech -->
+<div class="modal-overlay" id="deleteTechModal">
+  <div class="modal" style="width:440px;">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--danger);">🗑️ ลบรายชื่อช่าง</div>
+      <button class="modal-close" onclick="closeModal(&#39;deleteTechModal&#39;)">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="deleteTechInfo" style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--surface2);border-radius:10px;margin-bottom:16px;"></div>
+      <div id="deleteTechJobWarning"></div>
+      <div style="background:rgba(247,84,84,0.08);border:1px solid rgba(247,84,84,0.25);border-radius:10px;padding:14px;font-size:13px;color:var(--text2);line-height:1.7;">
+        การลบช่างจะ<strong style="color:var(--danger)">ไม่สามารถกู้คืนได้</strong><br>
+        งานที่ยังค้างอยู่จะถูก<strong style="color:var(--warning)">ถอน Assign</strong> และกลับสู่สถานะ "รอรับงาน"
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal(&#39;deleteTechModal&#39;)">ยกเลิก</button>
+      <button class="btn btn-danger" onclick="deleteTech()">🗑️ ยืนยันลบช่าง</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Confirm Delete Job -->
+<div class="modal-overlay" id="deleteJobModal">
+  <div class="modal" style="width:440px;">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--danger);">🗑️ ยกเลิก / ลบคิวงาน</div>
+      <button class="modal-close" onclick="closeModal(&#39;deleteJobModal&#39;)">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="deleteJobInfo" style="padding:14px;background:var(--surface2);border-radius:10px;margin-bottom:16px;"></div>
+      <div style="margin-bottom:14px;">
+        <label class="form-label">เหตุผลที่ยกเลิก <span style="color:var(--danger)">*</span></label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;" id="cancelReasonGrid">
+          <div class="cancel-reason-btn active" data-value="ลูกค้ายกเลิก" onclick="selectCancelReason(this)">👤 ลูกค้ายกเลิก</div>
+          <div class="cancel-reason-btn" data-value="งานเลื่อน" onclick="selectCancelReason(this)">📅 งานเลื่อน</div>
+          <div class="cancel-reason-btn" data-value="ซ้ำซ้อน" onclick="selectCancelReason(this)">🔁 ซ้ำซ้อน</div>
+          <div class="cancel-reason-btn" data-value="อื่นๆ" onclick="selectCancelReason(this)">📝 อื่นๆ</div>
+        </div>
+      </div>
+      <div>
+        <label class="form-label">หมายเหตุเพิ่มเติม</label>
+        <textarea class="form-textarea" id="cancelNote" placeholder="ระบุเหตุผลเพิ่มเติม (ถ้ามี)..." style="min-height:60px;margin-top:6px;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal(&#39;deleteJobModal&#39;)">ยกเลิก</button>
+      <button class="btn btn-danger" onclick="confirmDeleteJob()">🗑️ ยืนยันลบงาน</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ============================
+// GOOGLE SHEETS API CONFIG
+// ============================
+const API_URL = 'https://script.google.com/a/macros/push.co.th/s/AKfycbytmL-4Gmy0p1bvvJt0EJ7xtlvB6FQduaNl3T_rIxNEg4bMHrnVWDVKhVpBB_WKJmKA/exec'; // ← ใส่ URL จาก Apps Script ตรงนี้
+
+let isOnline = false; // false = ใช้ข้อมูล dummy, true = ใช้ Google Sheet จริง
+
+async function api(action, payload = {}) {
+  if (!API_URL || API_URL.includes('YOUR_APPS_SCRIPT')) return null;
+  try {
+    const res = await fetch(API_URL + '?action=' + action, {
+      method: 'POST',
+      body: JSON.stringify({ action, ...payload }),
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+    return json.data;
+  } catch (e) {
+    showToast('⚠️ ไม่สามารถเชื่อม Google Sheet: ' + e.message, 'error');
+    return null;
+  }
+}
+
+async function loadFromSheet() {
+  const data = await api('getAll');
+  if (!data) return;
+  if (data.jobs && data.jobs.length > 0) {
+    jobs = data.jobs.map(j => ({
+      ...j,
+      techIds: Array.isArray(j.techIds) ? j.techIds : (j.techIds ? JSON.parse(j.techIds) : []),
+    }));
+  }
+  if (data.technicians && data.technicians.length > 0) {
+    technicians = data.technicians;
+  }
+  isOnline = true;
+  document.getElementById('connectionStatus').textContent = '🟢 เชื่อมต่อ Google Sheet แล้ว';
+  document.getElementById('connectionStatus').style.color = 'var(--success)';
+  renderDashboard();
+  updateQueueBadge();
+}
+
+// ============================
+// DATA
+// ============================
+const COLORS = ['#4f8ef7','#22d3a5','#f5a623','#f75454','#a48bff','#f76b8a'];
+const AVATARS = ['#4f8ef7','#22d3a5','#f5a623','#a48bff','#f75454','#18a87f'];
+const EMOJIS = ['👨‍🔧','👩‍🔧','🧑‍🔧','👷','🔧','⚙️'];
+
+let technicians = [
+  { id:1, name:'สมชาย ใจดี', skill:'ไฟฟ้า, แอร์', phone:'081-234-5678', color:'#4f8ef7', emoji:'👨‍🔧', status:'free', jobsDone:5, jobsTotal:6 },
+  { id:2, name:'มานะ รักงาน', skill:'ประปา, ก่อสร้าง', phone:'082-345-6789', color:'#22d3a5', emoji:'👩‍🔧', status:'busy', jobsDone:3, jobsTotal:4 },
+  { id:3, name:'วิชัย เก่งกาจ', skill:'เครื่องใช้ไฟฟ้า', phone:'083-456-7890', color:'#f5a623', emoji:'🧑‍🔧', status:'traveling', jobsDone:2, jobsTotal:3 },
+  { id:4, name:'ประสิทธิ์ มือทอง', skill:'ซ่อมทั่วไป', phone:'084-567-8901', color:'#a48bff', emoji:'👷', status:'free', jobsDone:4, jobsTotal:5 },
+];
+
+let jobs = [
+  { id:'JOB-001', customer:'คุณแดง สมบูรณ์',      phone:'091-111-1111', address:'123 ถ.สุขุมวิท คลองเตย กรุงเทพ',        type:'ซ่อมแอร์',            priority:'urgent', techId:3,    desc:'แอร์ไม่เย็น มีเสียงดัง',         status:'working',   time:'08:30', timeEnd:null,    timeStart:'08:30', estEnd:'10:30' },
+  { id:'JOB-002', customer:'คุณดำ ดีใจ',           phone:'092-222-2222', address:'45/2 ถ.รามคำแหง มีนบุรี กรุงเทพ',      type:'ซ่อมไฟฟ้า',           priority:'normal', techId:2,    desc:'ไฟฟ้าดับเป็นบางจุด',             status:'traveling', time:'09:00', timeEnd:null,    timeStart:'09:00', estEnd:'11:30' },
+  { id:'JOB-003', customer:'ร้านกาแฟ The Brew',    phone:'093-333-3333', address:'78 ถ.เพชรบุรี ราชเทวี กรุงเทพ',        type:'ซ่อมเครื่องใช้ไฟฟ้า', priority:'normal', techId:1,    desc:'เครื่องชงกาแฟเสีย',              status:'done',      time:'07:45', timeEnd:'10:30', timeStart:'07:45', estEnd:'10:30' },
+  { id:'JOB-004', customer:'คุณขาว ใสสะอาด',      phone:'094-444-4444', address:'99 ถ.ลาดพร้าว จตุจักร กรุงเทพ',        type:'ซ่อมประปา',           priority:'urgent', techId:null, desc:'ท่อน้ำรั่ว น้ำท่วม',             status:'waiting',   time:'10:00', timeEnd:null,    timeStart:'10:00', estEnd:'12:00' },
+  { id:'JOB-005', customer:'บริษัท เอบีซี จำกัด',  phone:'095-555-5555', address:'200 ถ.วิภาวดี หลักสี่ กรุงเทพ',       type:'ติดตั้ง',             priority:'low',    techId:4,    desc:'ติดตั้งระบบไฟฟ้าสำนักงาน',      status:'assigned',  time:'11:00', timeEnd:null,    timeStart:'11:00', estEnd:'15:00' },
+  { id:'JOB-006', customer:'คุณเขียว ธรรมชาติ',   phone:'096-666-6666', address:'333 ถ.บางนา บางนา กรุงเทพ',            type:'ซ่อมแอร์',            priority:'normal', techId:1,    desc:'แอร์รั่ว น้ำหยด',                status:'done',      time:'06:00', timeEnd:'09:15', timeStart:'06:00', estEnd:'09:15' },
+  { id:'JOB-007', customer:'คุณม่วง เพชรน้ำงาม',  phone:'097-777-7777', address:'50 ถ.นวมินทร์ บึงกุ่ม กรุงเทพ',        type:'ซ่อมไฟฟ้า',           priority:'normal', techId:2,    desc:'สวิตช์ไฟชำรุด',                  status:'done',      time:'07:00', timeEnd:'08:30', timeStart:'07:00', estEnd:'08:30' },
+  { id:'JOB-008', customer:'คุณส้ม อร่อยดี',      phone:'098-888-8888', address:'10 ถ.เลียบทางรถไฟ ลาดกระบัง กรุงเทพ',  type:'ซ่อมประปา',           priority:'normal', techId:3,    desc:'ก๊อกน้ำรั่ว',                    status:'done',      time:'06:30', timeEnd:'08:00', timeStart:'06:30', estEnd:'08:00' },
+  { id:'JOB-009', customer:'โรงแรม Grand Stay',    phone:'099-999-9999', address:'888 ถ.สีลม บางรัก กรุงเทพ',            type:'ซ่อมแอร์',            priority:'urgent', techId:4,    desc:'แอร์ส่วนกลางล็อบบี้ดับ',         status:'assigned',  time:'13:00', timeEnd:null,    timeStart:'13:00', estEnd:'17:00' },
+
+  { id:'JOB-011', customer:'ห้างสรรพสินค้า Central', phone:'02-111-0001', address:'1 ถ.รัชดาฯ ห้วยขวาง กรุงเทพ',      type:'ซ่อมแอร์',   priority:'urgent', techId:null, desc:'แอร์ชั้น 3 ดับหมด ลูกค้าร้องเรียน', status:'waiting', time:'06:00', timeEnd:null, timeStart:null, estEnd:null, deadline:'TODAY_09:00', sla:'P1', slaHours:3 },
+  { id:'JOB-012', customer:'โรงพยาบาล เมดิคอล',     phone:'02-222-0002', address:'55 ถ.พระราม 4 คลองเตย กรุงเทพ',    type:'ซ่อมไฟฟ้า',  priority:'urgent', techId:null, desc:'ระบบไฟสำรองห้อง ICU ขัดข้อง',       status:'waiting', time:'07:30', timeEnd:null, timeStart:null, estEnd:null, deadline:'TODAY_10:00', sla:'P1', slaHours:3 },
+  { id:'JOB-013', customer:'ร้านอาหาร Siam Bistro',  phone:'02-333-0003', address:'22 ถ.สยาม ปทุมวัน กรุงเทพ',       type:'ซ่อมประปา',  priority:'normal', techId:null, desc:'ท่อน้ำทิ้งครัวอุดตัน',              status:'waiting', time:'08:00', timeEnd:null, timeStart:null, estEnd:null, deadline:'TODAY_14:00', sla:'P2', slaHours:8 },
+  { id:'JOB-014', customer:'บริษัท DataTech จำกัด',  phone:'02-444-0004', address:'88 ถ.อโศก วัฒนา กรุงเทพ',         type:'ติดตั้ง',    priority:'normal', techId:null, desc:'ติดตั้งระบบ UPS สำรองไฟ Server',   status:'waiting', time:'09:00', timeEnd:null, timeStart:null, estEnd:null, deadline:'TOMORROW_12:00', sla:'P2', slaHours:24 },
+  { id:'JOB-015', customer:'คอนโด The Loft',         phone:'02-555-0005', address:'100 ถ.สุขุมวิท 71 วัฒนา กรุงเทพ',  type:'ซ่อมทั่วไป', priority:'low',    techId:null, desc:'ไฟทางเดินชั้น 8 ดับ 3 ดวง',        status:'waiting', time:'10:00', timeEnd:null, timeStart:null, estEnd:null, deadline:'TOMORROW_18:00', sla:'P3', slaHours:48 },
+  { id:'JOB-010', customer:'คุณฟ้า สดใส',         phone:'090-000-1111', address:'22 ถ.พระราม 9 ห้วยขวาง กรุงเทพ',       type:'ติดตั้ง',             priority:'low',    techId:1,    desc:'ติดตั้งพัดลมเพดาน',              status:'assigned',  time:'11:30', timeEnd:null,    timeStart:'11:30', estEnd:'13:00' },
+];
+
+let jobCounter = 11;
+let techCounter = 5;
+let activeFilter = 'all';
+let searchQuery = '';
+
+// ============================
+// NAVIGATION
+// ============================
+const pageTitles = {
+  dashboard: '📊 Dashboard',
+  queue: '📋 คิวงาน',
+  kanban: '🗂️ Kanban Board',
+  technicians: '👷 จัดการช่าง',
+  report: '📈 รายงาน',
+};
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  const items = document.querySelectorAll('.nav-item');
+  items.forEach(i => {
+    if (i.getAttribute('onclick') && i.getAttribute('onclick').includes("'" + name + "'")) i.classList.add('active');
+  });
+  document.getElementById('pageTitle').textContent = pageTitles[name];
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'queue') renderQueue();
+  if (name === 'kanban') renderKanban();
+  if (name === 'technicians') renderTechs();
+  if (name === 'report') renderReport();
+}
+
+// ============================
+// RENDER DASHBOARD
+// ============================
+function renderDashboard() {
+  const total = jobs.length;
+  const done = jobs.filter(j => j.status === 'done').length;
+  const pending = jobs.filter(j => j.status !== 'done').length;
+  const urgent = jobs.filter(j => j.priority === 'urgent' && j.status !== 'done').length;
+  const avail = technicians.filter(t => t.status === 'free').length;
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statDone').textContent = done;
+  document.getElementById('statPending').textContent = pending;
+  document.getElementById('statRate').textContent = total ? Math.round(done/total*100) + '%' : '0%';
+  document.getElementById('statUrgent').textContent = urgent > 0 ? `⚠️ ด่วน ${urgent} งาน` : '';
+  document.getElementById('statAvail').textContent = avail;
+  document.getElementById('statTechTotal').textContent = technicians.length;
+
+  // Recent jobs
+  const rj = document.getElementById('recentJobs');
+  const recent = [...jobs].reverse().slice(0, 4);
+  rj.innerHTML = recent.map(j => renderJobCard(j, true)).join('');
+
+  // Tech performance
+  const tbody = document.getElementById('techPerfBody');
+  tbody.innerHTML = technicians.map(t => {
+    const techJobs = jobs.filter(j =>
+      j.techId === t.id ||
+      (Array.isArray(j.techIds) && j.techIds.includes(t.id))
+    );
+    const done = techJobs.filter(j => j.status === 'done').length;
+    const doing = techJobs.filter(j => j.status !== 'done').length;
+    const rate = techJobs.length ? Math.round(done / techJobs.length * 100) : 0;
+    return `<tr>
+      <td><span style="color:${t.color}">${t.emoji}</span> ${t.name.split(' ')[0]}</td>
+      <td><span class="tag tag-green">${done}</span></td>
+      <td><span class="tag tag-blue">${doing}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="progress-bar" style="width:80px;">
+            <div class="progress-fill" style="width:${rate}%;background:${rate>70?'var(--success)':rate>40?'var(--warning)':'var(--danger)'}"></div>
+          </div>
+          <span style="font-size:12px;color:var(--text2)">${rate}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  updateQueueBadge();
+  renderWeekChart();
+  renderStatusChart();
+  renderSchedule();
+  renderSLATable();
+}
+
+function renderWeekChart() {
+  const ctx = document.getElementById('weekChart');
+  if (ctx._chartInst) ctx._chartInst.destroy();
+  const labels = ['จ','อ','พ','พฤ','ศ','ส','อา'];
+  const data = [8, 12, 7, 15, 10, 6, jobs.filter(j=>j.status==='done').length];
+  const data2 = [6, 9, 5, 12, 8, 4, jobs.length];
+  ctx._chartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'งานเสร็จ', data, backgroundColor: 'rgba(34,211,165,0.7)', borderRadius: 6 },
+        { label: 'งานทั้งหมด', data: data2, backgroundColor: 'rgba(79,142,247,0.3)', borderRadius: 6 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#8890b0', font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: '#8890b0' }, grid: { color: '#2a2f48' } },
+        y: { ticks: { color: '#8890b0' }, grid: { color: '#2a2f48' } }
+      }
+    }
+  });
+}
+
+function renderStatusChart() {
+  const ctx = document.getElementById('statusChart');
+  if (ctx._chartInst) ctx._chartInst.destroy();
+  const statuses = ['waiting','assigned','traveling','working','done'];
+  const labels = ['รอ','Assigned','เดินทาง','กำลังทำ','เสร็จ'];
+  const data = statuses.map(s => jobs.filter(j => j.status === s).length);
+  ctx._chartInst = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{ data, backgroundColor: ['#f5a623','#4f8ef7','#a48bff','#22d3a5','#555d7a'], borderWidth: 0 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { color: '#8890b0', font: { size: 11 }, padding: 12 } }
+      }
+    }
+  });
+}
+
+// ============================
+// RENDER QUEUE
+// ============================
+function renderQueue() {
+  const list = document.getElementById('jobList');
+  let filtered = jobs.filter(j => {
+    if (activeFilter !== 'all' && j.status !== activeFilter) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return j.customer.toLowerCase().includes(q) || j.type.toLowerCase().includes(q) || j.id.toLowerCase().includes(q);
+    }
+    return true;
+  });
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">📭</div>ไม่พบงานในหมวดนี้</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(j => renderJobCard(j, false)).join('');
+  updateQueueBadge();
+}
+
+function renderJobCard(job, compact) {
+  const tech = technicians.find(t => t.id === job.techId);
+  const statusLabels = { waiting:'รอรับงาน', assigned:'Assigned', traveling:'เดินทาง', working:'กำลังทำ', done:'เสร็จแล้ว' };
+  const statusClasses = { waiting:'status-waiting', assigned:'status-assigned', traveling:'status-traveling', working:'status-working', done:'status-done' };
+  const priorityTag = job.priority === 'urgent' ? '<span class="tag tag-red">🔴 ด่วน</span>' :
+                      job.priority === 'low' ? '<span class="tag tag-gray">⚪ ไม่เร่ง</span>' :
+                      '<span class="tag tag-blue">🔵 ปกติ</span>';
+  return `
+  <div class="job-item ${job.priority}" onclick="openJobDetail('${job.id}')">
+    <div class="job-num">${job.id}</div>
+    <div class="job-info">
+      <div class="job-customer">${job.customer}</div>
+      <div class="job-desc">${job.type} — ${job.address.substring(0,40)}...</div>
+      <div class="job-meta">
+        ${priorityTag}
+        <span class="tag tag-gray">${job.type}</span>
+        ${job.mode ? `<span class="tag" style="background:${job.mode==='Online'?'rgba(34,211,165,0.15)':'rgba(124,92,245,0.15)'};color:${job.mode==='Online'?'var(--success)':'#a48bff'}">${job.mode==='Online'?'💻':'🚗'} ${job.mode}</span>` : ''}
+        ${tech ? `<span class="tag" style="background:${tech.color}22;color:${tech.color}">${tech.emoji} ${tech.name.split(' ')[0]}</span>` : '<span class="tag tag-gray">ยังไม่มอบหมาย</span>'}
+        ${job.client && job.client !== '-' ? `<span class="tag tag-gray">🏢 ${job.client}</span>` : ''}
+      </div>
+    </div>
+    <div class="job-status">
+      <div class="status-badge ${statusClasses[job.status]}">${statusLabels[job.status]}</div>
+      <div class="job-time">🕐 ${job.time}</div>
+    </div>
+  </div>`;
+}
+
+function filterJobs(filter, btn) {
+  activeFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderQueue();
+}
+
+function searchJobs(q) {
+  searchQuery = q;
+  renderQueue();
+}
+
+// ============================
+// KANBAN
+// ============================
+function renderKanban() {
+  const cols = [
+    { key: 'waiting', title: '📥 รอรับงาน', color: '#f5a623' },
+    { key: 'assigned', title: '📌 Assigned', color: '#4f8ef7' },
+    { key: 'traveling', title: '🚗 เดินทาง', color: '#a48bff' },
+    { key: 'working', title: '🔧 กำลังทำ', color: '#22d3a5' },
+  ];
+  const board = document.getElementById('kanbanBoard');
+  board.innerHTML = cols.map(col => {
+    const colJobs = jobs.filter(j => j.status === col.key);
+    return `
+    <div class="kanban-col">
+      <div class="kanban-head">
+        <div class="kanban-col-title" style="color:${col.color}">${col.title}</div>
+        <div class="kanban-count">${colJobs.length}</div>
+      </div>
+      <div class="kanban-body">
+        ${colJobs.length ? colJobs.map(j => {
+          const tech = technicians.find(t => t.id === j.techId);
+          return `<div class="kanban-card" onclick="openJobDetail('${j.id}')">
+            <div class="kanban-card-title">${j.customer}</div>
+            <div class="kanban-card-meta">${j.type}</div>
+            <div class="kanban-card-footer">
+              ${tech ? `<span style="font-size:12px;color:${tech.color}">${tech.emoji} ${tech.name.split(' ')[0]}</span>` : '<span style="font-size:12px;color:var(--text3)">ไม่มีช่าง</span>'}
+              ${j.priority==='urgent' ? '<span class="tag tag-red" style="font-size:10px;">ด่วน</span>' : ''}
+            </div>
+          </div>`;
+        }).join('') : '<div class="empty-state" style="padding:20px;"><div class="icon" style="font-size:24px;">📭</div>ว่างเปล่า</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================
+// TECHNICIANS
+// ============================
+function renderTechs() {
+  const grid = document.getElementById('techGrid');
+  grid.innerHTML = technicians.map(t => {
+    const techJobs = jobs.filter(j =>
+      j.techId === t.id ||
+      (Array.isArray(j.techIds) && j.techIds.includes(t.id))
+    );
+    const done = techJobs.filter(j => j.status === 'done').length;
+    const active = techJobs.find(j => j.status !== 'done');
+    const statusLabel = { free:'ว่าง', busy:'กำลังทำงาน', traveling:'เดินทาง', offline:'ออฟไลน์' };
+    const dotClass = { free:'dot-free', busy:'dot-busy', traveling:'dot-traveling', offline:'dot-offline' };
+    return `
+    <div class="tech-card">
+      <div class="tech-header">
+        <div class="tech-avatar" style="background:${t.color}22;color:${t.color}">${t.emoji}</div>
+        <div>
+          <div class="tech-name">${t.name}</div>
+          <div class="tech-skill">${t.skill}</div>
+        </div>
+        <div class="tech-status-dot ${dotClass[t.status]}" title="${statusLabel[t.status]}"></div>
+      </div>
+      <div class="tech-stats">
+        <div class="tech-stat">
+          <div class="tech-stat-val" style="color:var(--success)">${done}</div>
+          <div class="tech-stat-lbl">งานเสร็จ</div>
+        </div>
+        <div class="tech-stat">
+          <div class="tech-stat-val" style="color:var(--accent)">${techJobs.length - done}</div>
+          <div class="tech-stat-lbl">กำลังทำ</div>
+        </div>
+      </div>
+      <div class="tech-current">
+        ${active ? `<strong>กำลังทำ:</strong> ${active.customer} — ${active.type}` : '<span style="color:var(--success)">✅ ว่าง</span>'}
+      </div>
+      <div style="margin-top:10px; display:flex; gap:6px;">
+        <span class="tag" style="background:${t.color}22;color:${t.color};font-size:11px;">${statusLabel[t.status]}</span>
+        <span style="font-size:11px;color:var(--text3);margin-left:auto">${t.phone}</span>
+        <button onclick="event.stopPropagation();confirmDeleteTech(${t.id})" style="background:rgba(247,84,84,0.12);border:1px solid rgba(247,84,84,0.3);color:var(--danger);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:'Sarabun',sans-serif;" onmouseover="this.style.background='rgba(247,84,84,0.25)'" onmouseout="this.style.background='rgba(247,84,84,0.12)'">🗑️ ลบ</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================
+// REPORT
+// ============================
+function renderReport() {
+  document.getElementById('rptTotal').textContent = jobs.length + 18;
+  document.getElementById('rptDone').textContent = jobs.filter(j => j.status === 'done').length + 15;
+
+  // Month chart
+  const ctxM = document.getElementById('monthChart');
+  if (ctxM._chartInst) ctxM._chartInst.destroy();
+  const days = Array.from({length:30}, (_,i) => i+1);
+  const monthData = days.map(d => Math.floor(Math.random() * 10) + 3);
+  ctxM._chartInst = new Chart(ctxM, {
+    type: 'line',
+    data: {
+      labels: days,
+      datasets: [{ label: 'จำนวนงาน', data: monthData, borderColor: '#4f8ef7', backgroundColor: 'rgba(79,142,247,0.1)', fill: true, tension: 0.4, pointRadius: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#8890b0', font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: '#8890b0', maxTicksLimit: 10 }, grid: { color: '#2a2f48' } },
+        y: { ticks: { color: '#8890b0' }, grid: { color: '#2a2f48' } }
+      }
+    }
+  });
+
+  // Type chart
+  const ctxT = document.getElementById('typeChart');
+  if (ctxT._chartInst) ctxT._chartInst.destroy();
+  ctxT._chartInst = new Chart(ctxT, {
+    type: 'bar',
+    data: {
+      labels: ['ซ่อมไฟฟ้า','ซ่อมแอร์','ซ่อมประปา','ซ่อมเครื่อง','ติดตั้ง','อื่นๆ'],
+      datasets: [{ label: 'งาน', data: [12,9,7,8,5,3], backgroundColor: COLORS.map(c => c+'aa'), borderRadius: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#8890b0' }, grid: { color: '#2a2f48' } },
+        y: { ticks: { color: '#8890b0' }, grid: { color: 'transparent' } }
+      }
+    }
+  });
+
+  // Monthly perf
+  const tbody = document.getElementById('monthlyPerfBody');
+  tbody.innerHTML = technicians.map(t => {
+    const total = Math.floor(Math.random()*8)+5;
+    const done = Math.floor(total * (0.7 + Math.random()*0.3));
+    const rate = Math.round(done/total*100);
+    const rating = (3.5 + Math.random()*1.5).toFixed(1);
+    return `<tr>
+      <td><span style="color:${t.color}">${t.emoji}</span> ${t.name}</td>
+      <td>${total}</td>
+      <td>${done}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="progress-bar" style="width:70px;">
+            <div class="progress-fill" style="width:${rate}%;background:${rate>70?'var(--success)':'var(--warning)'}"></div>
+          </div>
+          <span style="font-size:12px">${rate}%</span>
+        </div>
+      </td>
+      <td style="color:var(--text2)">2.${Math.floor(Math.random()*9)+1} ชม.</td>
+      <td>⭐ ${rating}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ============================
+// JOB DETAIL MODAL
+// ============================
+function openJobDetail(id) {
+  const job = jobs.find(j => j.id === id);
+  if (!job) return;
+  const tech = technicians.find(t => t.id === job.techId);
+  const statusLabels = { waiting:'รอรับงาน', assigned:'Assigned', traveling:'เดินทาง', working:'กำลังทำ', done:'เสร็จแล้ว' };
+  const statusClasses = { waiting:'status-waiting', assigned:'status-assigned', traveling:'status-traveling', working:'status-working', done:'status-done' };
+
+  document.getElementById('detailTitle').textContent = `🔧 ${job.id} — ${job.customer}`;
+  document.getElementById('detailBody').innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:20px;margin-bottom:20px;">
+      <div style="flex:1;min-width:200px;">
+        <div class="form-label">สถานะงาน</div>
+        <span class="status-badge ${statusClasses[job.status]}" style="font-size:13px">${statusLabels[job.status]}</span>
+      </div>
+      <div style="flex:1;min-width:200px;">
+        <div class="form-label">ความเร่งด่วน</div>
+        ${job.priority === 'urgent' ? '<span class="tag tag-red">🔴 ด่วน</span>' : job.priority === 'low' ? '<span class="tag tag-gray">ไม่เร่ง</span>' : '<span class="tag tag-blue">ปกติ</span>'}
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">ลูกค้า</div>
+      <div style="font-weight:600">${job.customer}</div>
+      <div style="color:var(--text2);font-size:13px">${job.phone}</div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">ที่อยู่</div>
+      <div style="color:var(--text2);font-size:13px">📍 ${job.address}</div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">ประเภทงาน</div>
+      <div style="font-weight:600">${job.type}</div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">รายละเอียด</div>
+      <div style="color:var(--text2);font-size:13px">${job.desc}</div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">มอบหมายให้</div>
+      ${tech ? `<div style="display:flex;align-items:center;gap:8px;"><span style="color:${tech.color};font-size:20px">${tech.emoji}</span><div><div style="font-weight:600">${tech.name}</div><div style="color:var(--text2);font-size:12px">${tech.skill}</div></div></div>` : '<div style="color:var(--text3)">ยังไม่ได้มอบหมาย</div>'}
+    </div>
+    <div class="form-group">
+      <div class="form-label">อัปเดตสถานะ</div>
+      <select class="form-select" id="statusUpdate" onchange="updateJobStatus('${id}', this.value)">
+        <option value="waiting" ${job.status==='waiting'?'selected':''}>รอรับงาน</option>
+        <option value="assigned" ${job.status==='assigned'?'selected':''}>Assigned</option>
+        <option value="traveling" ${job.status==='traveling'?'selected':''}>เดินทาง</option>
+        <option value="working" ${job.status==='working'?'selected':''}>กำลังทำ</option>
+        <option value="done" ${job.status==='done'?'selected':''}>เสร็จแล้ว</option>
+      </select>
+    </div>
+  `;
+
+  const footer = document.getElementById('detailFooter');
+  const statusFlow = ['waiting','assigned','traveling','working','done'];
+  const idx = statusFlow.indexOf(job.status);
+  const nextStatus = idx < 4 ? statusFlow[idx + 1] : null;
+  const nextLabels = { assigned:'✅ Assign งาน', traveling:'🚗 ออกเดินทาง', working:'🔧 เริ่มทำงาน', done:'✅ งานเสร็จแล้ว' };
+  footer.innerHTML = `
+    <button class="btn btn-danger btn-sm" onclick="openDeleteJobModal('${id}')" style="margin-right:auto;">🗑️ ยกเลิกงาน</button>
+    <button class="btn btn-outline" onclick="closeModal('jobDetailModal')">ปิด</button>
+    <button class="btn btn-outline" onclick="openEditJob('${id}')" style="color:var(--accent);border-color:var(--accent);">✏️ แก้ไข</button>
+    ${nextStatus ? `<button class="btn btn-success" onclick="nextStatus('${id}')">${nextLabels[nextStatus]}</button>` : '<span style="color:var(--success);font-size:13px;">✅ งานเสร็จสมบูรณ์</span>'}
+  `;
+
+  openModal('jobDetailModal');
+}
+
+function updateJobStatus(id, status) {
+  const job = jobs.find(j => j.id === id);
+  if (job) {
+    job.status = status;
+    // update tech status
+    if (status === 'traveling') {
+      const tech = technicians.find(t => t.id === job.techId);
+      if (tech) tech.status = 'traveling';
+    } else if (status === 'working') {
+      const tech = technicians.find(t => t.id === job.techId);
+      if (tech) tech.status = 'busy';
+    } else if (status === 'done') {
+      const tech = technicians.find(t => t.id === job.techId);
+      if (tech) {
+        const otherJobs = jobs.filter(j => j.techId === tech.id && j.status !== 'done' && j.id !== id);
+        tech.status = otherJobs.length ? 'busy' : 'free';
+      }
+    }
+    showToast(`อัปเดตสถานะ ${id} เรียบร้อย`, 'success');
+    if (isOnline) api('updateJob', { job });
+    closeModal('jobDetailModal');
+    openJobDetail(id);
+    updateQueueBadge();
+  }
+}
+
+function nextStatus(id) {
+  const job = jobs.find(j => j.id === id);
+  const statusFlow = ['waiting','assigned','traveling','working','done'];
+  const idx = statusFlow.indexOf(job.status);
+  if (idx < 4) updateJobStatus(id, statusFlow[idx + 1]);
+}
+
+// ============================
+// ADD JOB
+// ============================
+function selectJobType(el) {
+  document.querySelectorAll('.job-type-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('fType').value = el.dataset.value;
+}
+
+function selectUrgent(el) {
+  document.querySelectorAll('.urgent-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('fPriority').value = el.dataset.value;
+}
+
+function selectMode(el) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('fMode').value = el.dataset.value;
+}
+
+function toggleTechChip(el, techId) {
+  el.classList.toggle('selected');
+}
+
+function openAddJobModal() {
+  // Build tech picker chips
+  const picker = document.getElementById('fTechPicker');
+  const statusDot = { free: '#22d3a5', busy: '#f5a623', traveling: '#a48bff', offline: '#555d7a' };
+  const statusLabel = { free: 'ว่าง', busy: 'ไม่ว่าง', traveling: 'เดินทาง', offline: 'ออฟไลน์' };
+  picker.innerHTML = technicians.map(t => `
+    <div class="tech-chip" data-tech-id="${t.id}" onclick="toggleTechChip(this, ${t.id})">
+      <div class="chip-dot" style="background:${statusDot[t.status]||'#555'}"></div>
+      <span>${t.emoji} ${t.name.split(' ')[0]}</span>
+      <span style="font-size:10px;color:var(--text3)">${statusLabel[t.status]||''}</span>
+      <span class="chip-check">✓</span>
+    </div>
+  `).join('');
+
+  // Reset form
+  document.getElementById('fCustomer').value = '';
+  document.getElementById('fPhone').value = '';
+  document.getElementById('fAddress').value = '';
+  document.getElementById('fClient').value = '';
+  document.getElementById('fDesc').value = '';
+  document.querySelectorAll('.job-type-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+  document.getElementById('fType').value = 'ตรวจสอบ';
+  document.querySelectorAll('.urgent-btn').forEach(b => b.classList.toggle('active', b.dataset.value==='normal'));
+  document.getElementById('fPriority').value = 'normal';
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.value==='Onsite'));
+  document.getElementById('fMode').value = 'Onsite';
+
+  openModal('addJobModal');
+}
+
+function addJob() {
+  const customer = document.getElementById('fCustomer').value.trim();
+  if (!customer) { showToast('กรุณาใส่ชื่อลูกค้า', 'error'); return; }
+
+  // Collect selected technicians (multi-select chips)
+  const selectedChips = document.querySelectorAll('#fTechPicker .tech-chip.selected');
+  const techIds = [...selectedChips].map(c => parseInt(c.dataset.techId));
+  const primaryTechId = techIds[0] || null;
+
+  const id = 'JOB-' + String(jobCounter++).padStart(3, '0');
+  const now = new Date();
+  const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  const newJob = {
+    id,
+    customer,
+    phone:    document.getElementById('fPhone').value.trim() || '-',
+    address:  document.getElementById('fAddress').value.trim() || 'ไม่ระบุ',
+    client:   document.getElementById('fClient').value.trim() || '-',
+    type:     document.getElementById('fType').value,
+    priority: document.getElementById('fPriority').value,
+    mode:     document.getElementById('fMode').value,
+    techId:   primaryTechId,
+    techIds:  techIds,
+    desc:     document.getElementById('fDesc').value.trim() || '-',
+    status:   primaryTechId ? 'assigned' : 'waiting',
+    time:     timeStr,
+    timeEnd:  null,
+    timeStart: timeStr,
+    estEnd:   null,
+    deadline: null,
+    sla:      null,
+    slaHours: null,
+  };
+
+  // Update tech statuses
+  techIds.forEach(tid => {
+    const tech = technicians.find(t => t.id === tid);
+    if (tech && tech.status === 'free') tech.status = 'busy';
+  });
+
+  jobs.unshift(newJob);
+  closeModal('addJobModal');
+  showToast(`✅ เพิ่มงาน ${id} — ${customer} เรียบร้อย`, 'success');
+  // Save to Google Sheet (ถ้าเชื่อมอยู่)
+  if (isOnline) api('saveJob', { job: newJob });
+  renderDashboard();
+  renderSchedule();
+  updateQueueBadge();
+}
+
+// ============================
+// ADD TECH
+// ============================
+function openAddTechModal() { openModal('addTechModal'); }
+
+function addTech() {
+  const name = document.getElementById('tName').value.trim();
+  if (!name) { showToast('กรุณาใส่ชื่อช่าง', 'error'); return; }
+  const idx = technicians.length % COLORS.length;
+  technicians.push({
+    id: techCounter++,
+    name,
+    phone: document.getElementById('tPhone').value || '-',
+    skill: document.getElementById('tSkill').value || 'ทั่วไป',
+    color: COLORS[idx],
+    emoji: EMOJIS[idx % EMOJIS.length],
+    status: 'free',
+    jobsDone: 0,
+    jobsTotal: 0,
+  });
+  closeModal('addTechModal');
+  showToast(`✅ เพิ่มช่าง ${name} เรียบร้อย`, 'success');
+  if (isOnline) api('saveTech', { tech: technicians[technicians.length - 1] });
+  document.getElementById('tName').value = '';
+  document.getElementById('tPhone').value = '';
+  document.getElementById('tSkill').value = '';
+  renderTechs();
+}
+
+// ============================
+// UTILS
+// ============================
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span> ${msg}`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+function updateQueueBadge() {
+  const waiting = jobs.filter(j => j.status === 'waiting' || j.status === 'assigned').length;
+  document.getElementById('queueBadge').textContent = waiting;
+}
+
+function setDate() {
+  const now = new Date();
+  document.getElementById('currentDate').textContent = now.toLocaleDateString('th-TH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+}
+
+
+// ============================
+// DAILY SCHEDULE (GANTT)
+// ============================
+const SCHED_START_H = 6;   // 06:00
+const SCHED_END_H   = 20;  // 20:00
+const TOTAL_MINS    = (SCHED_END_H - SCHED_START_H) * 60; // 840 min
+
+function timeToMins(t) {
+  if (!t) return null;
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function blockLeft(startMins) {
+  const offset = startMins - SCHED_START_H * 60;
+  return Math.max(0, (offset / TOTAL_MINS) * 100);
+}
+
+function blockWidth(startMins, endMins) {
+  const dur = Math.min(endMins, SCHED_END_H * 60) - Math.max(startMins, SCHED_START_H * 60);
+  return Math.max(0.5, (dur / TOTAL_MINS) * 100);
+}
+
+function nowPercent() {
+  const now = new Date();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  return ((mins - SCHED_START_H * 60) / TOTAL_MINS) * 100;
+}
+
+function renderSchedule() {
+  const grid = document.getElementById('scheduleGrid');
+  if (!grid) return;
+
+  const hours = [];
+  for (let h = SCHED_START_H; h <= SCHED_END_H; h++) hours.push(h);
+
+  const nowPct = nowPercent();
+  const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
+
+  // --- Time bar ---
+  let timebarCols = `grid-template-columns: repeat(${hours.length}, 1fr)`;
+  let timebar = `<div class="schedule-timebar" style="${timebarCols}; position:relative;">`;
+  hours.forEach(h => {
+    const isNow = Math.abs(((h - SCHED_START_H) / (SCHED_END_H - SCHED_START_H) * 100) - nowPct) < (100 / (SCHED_END_H - SCHED_START_H) / 2);
+    timebar += `<div class="time-cell ${isNow ? 'now-col' : ''}">${String(h).padStart(2,'0')}:00</div>`;
+  });
+  timebar += `</div>`;
+
+  // --- Tech rows ---
+  let rows = '';
+  let hasOverload = false;
+
+  technicians.forEach(tech => {
+    const techJobs = jobs.filter(j => j.timeStart && (
+      j.techId === tech.id ||
+      (Array.isArray(j.techIds) && j.techIds.includes(tech.id))
+    ));
+    const sortedJobs = [...techJobs].sort((a, b) => timeToMins(a.timeStart) - timeToMins(b.timeStart));
+
+    // Check overlap (overload = 2 jobs at same time)
+    for (let i = 0; i < sortedJobs.length - 1; i++) {
+      const aEnd = timeToMins(sortedJobs[i].estEnd || sortedJobs[i].timeStart);
+      const bStart = timeToMins(sortedJobs[i+1].timeStart);
+      if (aEnd && bStart && bStart < aEnd) hasOverload = true;
+    }
+
+    const blockColors = {
+      done: '#555d7a',
+      working: '#22d3a5',
+      traveling: '#a48bff',
+      assigned: '#4f8ef7',
+      waiting: '#f5a623',
+    };
+
+    // Background columns (hour lines)
+    let bgCols = '';
+    hours.forEach(h => {
+      const pct = ((h - SCHED_START_H) / (SCHED_END_H - SCHED_START_H)) * 100;
+      bgCols += `<div class="schedule-bg-col" style="left:${pct}%"></div>`;
+    });
+
+    // Now line
+    if (nowPct >= 0 && nowPct <= 100) {
+      bgCols += `<div class="schedule-bg-col now-line" style="left:${nowPct}%">
+        <span class="now-label">NOW</span>
+      </div>`;
+    }
+
+    // Job blocks
+    let blocks = '';
+    sortedJobs.forEach(job => {
+      const start = timeToMins(job.timeStart);
+      const end   = timeToMins(job.estEnd || job.timeEnd) || (start + 120); // default 2hr
+      if (!start) return;
+      const left  = blockLeft(start);
+      const width = blockWidth(start, end);
+      const widthPx = (width / 100) * 840; // approx px for label logic
+      const color = blockColors[job.status] || '#4f8ef7';
+      const isUrgent = job.priority === 'urgent';
+      const isActive = job.status === 'working' || job.status === 'traveling';
+      const pulseStyle = isActive ? 'animation:blockPulse 2s ease-in-out infinite;' : '';
+      // Show label based on available width
+      const shortName = job.customer.split(' ')[0];
+      const label = width > 8
+        ? `${isUrgent ? '🔴 ' : ''}${shortName} · ${job.type}`
+        : width > 4
+          ? shortName
+          : '●';
+      blocks += `<div class="job-block"
+        style="left:${left}%;width:${width}%;background:${color}22;border-color:${color}66;color:${color};${pulseStyle};box-shadow:0 0 0 1px ${color}33 inset;"
+        onclick="openJobDetail('${job.id}')"
+        title="[${job.id}] ${job.customer}&#10;${job.type} | ${job.mode||'Onsite'}&#10;⏰ ${job.timeStart||'?'} – ${job.estEnd||'?'}&#10;สถานะ: ${job.status}">
+        <span class="job-block-label" style="font-size:${width>6?'11':'10'}px;">${label}</span>
+      </div>`;
+    });
+
+    // Free slot highlight: find gaps
+    let freeSlots = '';
+    const busyPeriods = sortedJobs
+      .filter(j => j.timeStart && (j.estEnd || j.timeEnd))
+      .map(j => ({ s: timeToMins(j.timeStart), e: timeToMins(j.estEnd || j.timeEnd) }))
+      .sort((a,b) => a.s - b.s);
+
+    // Show free zone after last job until EOD
+    if (busyPeriods.length > 0) {
+      const lastEnd = Math.max(...busyPeriods.map(p => p.e));
+      if (lastEnd < SCHED_END_H * 60) {
+        const fl = blockLeft(lastEnd);
+        const fw = 100 - fl;
+        if (fw > 3) {
+          freeSlots = `<div class="free-slot" style="left:${fl}%;width:${fw}%">ว่าง</div>`;
+        }
+      }
+    } else {
+      freeSlots = `<div class="free-slot" style="left:0%;width:100%">ว่างทั้งวัน</div>`;
+    }
+
+    const statusDots = { free:'#22d3a5', busy:'#f5a623', traveling:'#a48bff', offline:'#555d7a' };
+    rows += `
+    <div class="schedule-row">
+      <div class="tech-label">
+        <div class="tech-label-avatar" style="background:${tech.color}22;color:${tech.color}">${tech.emoji}</div>
+        <div class="tech-label-info">
+          <div class="tech-label-name">${tech.name.split(' ')[0]}</div>
+          <div class="tech-label-count">${techJobs.length} งาน</div>
+        </div>
+        <div style="width:7px;height:7px;border-radius:50%;background:${statusDots[tech.status]||'#555'};flex-shrink:0"></div>
+      </div>
+      <div class="schedule-cells" style="position:relative;">
+        ${bgCols}
+        ${freeSlots}
+        ${blocks}
+      </div>
+    </div>`;
+  });
+
+  // --- Capacity strip (jobs per hour) ---
+  let capStrip = '<div class="capacity-strip">';
+  hours.slice(0, -1).forEach(h => {
+    const hStart = h * 60;
+    const hEnd = (h + 1) * 60;
+    const count = jobs.filter(j => {
+      const s = timeToMins(j.timeStart);
+      const e = timeToMins(j.estEnd || j.timeEnd) || (s ? s + 90 : null);
+      return s && e && s < hEnd && e > hStart;
+    }).length;
+    const techCount = technicians.length;
+    const load = count / techCount;
+    const barColor = load >= 1 ? '#f75454' : load >= 0.7 ? '#f5a623' : '#22d3a5';
+    const barW = Math.min(100, Math.round(load * 100));
+    capStrip += `<div class="cap-cell" title="${h}:00 — ${count}/${techCount} งาน">
+      <div class="cap-bar" style="background:${barColor};width:${barW}%"></div>
+      <span style="color:${count>0?barColor:'#555d7a'}">${count}</span>
+    </div>`;
+  });
+  capStrip += '</div>';
+
+  grid.innerHTML = timebar + rows + capStrip;
+
+  // Overload alert
+  const banner = document.getElementById('overloadBanner');
+  const flag = document.getElementById('overloadFlag');
+  if (hasOverload) {
+    banner.style.display = 'flex';
+    flag.style.display = 'inline-block';
+    const overloadedTechs = technicians.filter(t => {
+      const tj = jobs.filter(j => j.techId === t.id && j.timeStart).sort((a,b) => timeToMins(a.timeStart) - timeToMins(b.timeStart));
+      for (let i = 0; i < tj.length-1; i++) {
+        const ae = timeToMins(tj[i].estEnd || tj[i].timeStart);
+        const bs = timeToMins(tj[i+1].timeStart);
+        if (ae && bs && bs < ae) return true;
+      }
+      return false;
+    }).map(t => t.name.split(' ')[0]);
+    document.getElementById('overloadMsg').textContent = `⚠️ ช่างที่งานซ้อนกัน: ${overloadedTechs.join(', ')} — ควรจัดสรรงานใหม่`;
+  } else {
+    banner.style.display = 'none';
+    flag.style.display = 'none';
+  }
+}
+
+function scrollScheduleToNow() {
+  const pct = nowPercent();
+  const inner = document.getElementById('scheduleInner');
+  if (inner) {
+    const grid = document.getElementById('scheduleGrid');
+    const scrollTo = (pct / 100) * (grid.scrollWidth - 160) - inner.clientWidth / 2 + 160;
+    inner.scrollTo({ left: Math.max(0, scrollTo), behavior: 'smooth' });
+  }
+}
+
+
+// ============================
+// SLA / BACKLOG TABLE
+// ============================
+function parseSLADeadline(deadlineStr) {
+  if (!deadlineStr) return null;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+
+  let base, timeStr;
+  if (deadlineStr.startsWith('TODAY_')) {
+    base = today;
+    timeStr = deadlineStr.replace('TODAY_', '');
+  } else if (deadlineStr.startsWith('TOMORROW_')) {
+    base = tomorrow;
+    timeStr = deadlineStr.replace('TOMORROW_', '');
+  } else {
+    return new Date(deadlineStr);
+  }
+  const [h, m] = timeStr.split(':').map(Number);
+  const dl = new Date(base);
+  dl.setHours(h, m, 0, 0);
+  return dl;
+}
+
+function formatTimeLeft(ms) {
+  if (ms < 0) {
+    const abs = Math.abs(ms);
+    const h = Math.floor(abs / 3600000);
+    const m = Math.floor((abs % 3600000) / 60000);
+    return h > 0 ? `-${h}ชม. ${m}น.` : `-${m}น.`;
+  }
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  if (h >= 24) return `${Math.floor(h/24)}วัน ${h%24}ชม.`;
+  return h > 0 ? `${h}ชม. ${m}น.` : `${m}น.`;
+}
+
+function getSLAClass(ms, slaLevel) {
+  if (ms < 0)                        return { pill: 'sla-overdue',  row: 'sla-overdue-row',  icon: '🔴', label: 'เกินกำหนด' };
+  if (slaLevel === 'P1' && ms < 3600000)  return { pill: 'sla-critical', row: 'sla-critical-row', icon: '🟠', label: 'วิกฤต' };
+  if (ms < 7200000)                  return { pill: 'sla-critical', row: 'sla-critical-row', icon: '🟠', label: 'เร่งด่วน' };
+  if (ms < 14400000)                 return { pill: 'sla-warning',  row: '',                 icon: '🟡', label: 'ใกล้ครบ' };
+  return                                    { pill: 'sla-ok',       row: '',                 icon: '🟢', label: 'ปกติ' };
+}
+
+function renderSLATable() {
+  const tbody = document.getElementById('slaTableBody');
+  const emptyEl = document.getElementById('slaEmpty');
+  const summaryEl = document.getElementById('slaSummary');
+  if (!tbody) return;
+
+  const now = new Date();
+
+  // Jobs to show: waiting/unassigned that have a deadline, OR any job with deadline that is overdue
+  const slaJobs = jobs.filter(j => j.deadline && (j.status === 'waiting' || j.status === 'assigned'));
+
+  if (slaJobs.length === 0) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    summaryEl.innerHTML = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  // Sort: overdue first, then by time left
+  slaJobs.sort((a, b) => {
+    const da = parseSLADeadline(a.deadline);
+    const db = parseSLADeadline(b.deadline);
+    return (da - now) - (db - now);
+  });
+
+  const overdue = slaJobs.filter(j => parseSLADeadline(j.deadline) < now).length;
+  const critical = slaJobs.filter(j => {
+    const dl = parseSLADeadline(j.deadline);
+    const ms = dl - now;
+    return ms >= 0 && ms < 7200000;
+  }).length;
+
+  summaryEl.innerHTML = `
+    ${overdue > 0 ? `<div class="sla-sum-item"><div class="sla-sum-dot" style="background:var(--danger)"></div>${overdue} เกินกำหนด</div>` : ''}
+    ${critical > 0 ? `<div class="sla-sum-item"><div class="sla-sum-dot" style="background:var(--warning)"></div>${critical} วิกฤต</div>` : ''}
+    <div class="sla-sum-item"><div class="sla-sum-dot" style="background:var(--text3)"></div>${slaJobs.length} งานรอช่าง</div>
+  `;
+
+  const slaPillColor = { P1: '#f75454', P2: '#f5a623', P3: '#8890b0' };
+  const slaName = { P1: 'P1 — ด่วนมาก', P2: 'P2 — ด่วน', P3: 'P3 — ปกติ' };
+  const statusLabels = { waiting:'รอรับงาน', assigned:'Assigned' };
+  const statusClasses = { waiting:'status-waiting', assigned:'status-assigned' };
+
+  tbody.innerHTML = slaJobs.map(job => {
+    const dl = parseSLADeadline(job.deadline);
+    const ms = dl ? dl - now : null;
+    const cls = ms !== null ? getSLAClass(ms, job.sla) : { pill:'sla-ok', row:'', icon:'⚪', label:'-' };
+    const timeLeft = ms !== null ? formatTimeLeft(ms) : '-';
+
+    const dlDisplay = dl ? dl.toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' }) +
+      (dl.getDate() === now.getDate() ? ' วันนี้' : ' พรุ่งนี้') : '-';
+
+    const freeTechs = technicians.filter(t => t.status === 'free');
+
+    return `<tr class="${cls.row}" onclick="openJobDetail('${job.id}')">
+      <td>
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;color:var(--text3)">${job.id}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">${job.type}</div>
+      </td>
+      <td>
+        <div style="font-weight:600;font-size:13px">${job.customer}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">📍 ${job.address.substring(0,35)}...</div>
+      </td>
+      <td>
+        <span class="tag" style="background:${slaPillColor[job.sla]||'#555'}22;color:${slaPillColor[job.sla]||'#555'};font-size:11px;font-weight:700">
+          ${slaName[job.sla] || job.sla}
+        </span>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">ต้องเสร็จใน ${job.slaHours}ชม.</div>
+      </td>
+      <td>
+        <div style="font-weight:600;font-size:13px">${dlDisplay}</div>
+      </td>
+      <td>
+        <span class="sla-pill ${cls.pill}">${cls.icon} ${timeLeft}</span>
+      </td>
+      <td>
+        <span class="status-badge ${statusClasses[job.status]||''}">${statusLabels[job.status]||job.status}</span>
+      </td>
+      <td onclick="event.stopPropagation()">
+        ${freeTechs.length > 0
+          ? `<select class="form-select" style="padding:4px 8px;font-size:12px;width:auto;" onchange="quickAssign('${job.id}', this.value); this.value=''">
+               <option value="">⚡ Assign ช่าง</option>
+               ${freeTechs.map(t => `<option value="${t.id}">${t.emoji} ${t.name.split(' ')[0]}</option>`).join('')}
+             </select>`
+          : `<span style="font-size:11px;color:var(--text3)">ไม่มีช่างว่าง</span>`
+        }
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function quickAssign(jobId, techId) {
+  if (!techId) return;
+  const job = jobs.find(j => j.id === jobId);
+  const tech = technicians.find(t => t.id === parseInt(techId));
+  if (!job || !tech) return;
+  job.techId = tech.id;
+  if (!Array.isArray(job.techIds)) job.techIds = [];
+  if (!job.techIds.includes(tech.id)) job.techIds.push(tech.id);
+  job.status = 'assigned';
+  tech.status = 'busy';
+  if (!job.timeStart) {
+    const now = new Date();
+    job.timeStart = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    job.estEnd = `${String(now.getHours() + (job.slaHours||2)).padStart(2,'0')}:00`;
+  }
+  showToast(`✅ Assign ${job.id} → ${tech.name.split(' ')[0]} เรียบร้อย`, 'success');
+  if (isOnline) api('updateJob', { job });
+  renderDashboard();
+}
+
+// Auto-refresh SLA every minute
+setInterval(() => {
+  if (document.getElementById('page-dashboard').classList.contains('active')) {
+    renderSLATable();
+  }
+}, 60000);
+
+
+// ============================
+// EDIT JOB
+// ============================
+let editingJobId = null;
+
+function openEditJob(id) {
+  const job = jobs.find(j => j.id === id);
+  if (!job) return;
+  editingJobId = id;
+
+  document.getElementById('editJobId').textContent = id;
+  document.getElementById('eCustomer').value = job.customer || '';
+  document.getElementById('ePhone').value = job.phone || '';
+  document.getElementById('eAddress').value = job.address || '';
+  document.getElementById('eDesc').value = job.desc || '';
+  document.getElementById('eTimeStart').value = job.timeStart || '';
+  document.getElementById('eEstEnd').value = job.estEnd || '';
+  document.getElementById('eSla').value = job.sla || '';
+
+  // Set deadline datetime-local value
+  if (job.deadline) {
+    const dl = parseSLADeadline ? parseSLADeadline(job.deadline) : null;
+    if (dl) {
+      // format to datetime-local: YYYY-MM-DDTHH:MM
+      const pad = n => String(n).padStart(2, '0');
+      document.getElementById('eDeadline').value =
+        `${dl.getFullYear()}-${pad(dl.getMonth()+1)}-${pad(dl.getDate())}T${pad(dl.getHours())}:${pad(dl.getMinutes())}`;
+    }
+  } else {
+    document.getElementById('eDeadline').value = '';
+  }
+
+  // Type select
+  const typeEl = document.getElementById('eType');
+  [...typeEl.options].forEach(o => { o.selected = o.value === job.type; });
+
+  // Priority select
+  const prioEl = document.getElementById('ePriority');
+  [...prioEl.options].forEach(o => { o.selected = o.value === job.priority; });
+
+  // Tech select
+  const techEl = document.getElementById('eTech');
+  techEl.innerHTML = '<option value="">— ยังไม่มอบหมาย —</option>' +
+    technicians.map(t =>
+      `<option value="${t.id}" ${job.techId === t.id ? 'selected' : ''}>${t.emoji} ${t.name} (${t.status === 'free' ? '✅ ว่าง' : t.status === 'busy' ? '🔴 ไม่ว่าง' : '🟣 เดินทาง'})</option>`
+    ).join('');
+
+  // Close detail modal, open edit modal
+  closeModal('jobDetailModal');
+  openModal('editJobModal');
+}
+
+function saveEditJob() {
+  const job = jobs.find(j => j.id === editingJobId);
+  if (!job) return;
+
+  const customer = document.getElementById('eCustomer').value.trim();
+  if (!customer) { showToast('กรุณาใส่ชื่อลูกค้า', 'error'); return; }
+
+  // Handle tech change
+  const newTechId = parseInt(document.getElementById('eTech').value) || null;
+  if (newTechId !== job.techId) {
+    // Free old tech if needed
+    if (job.techId) {
+      const oldTech = technicians.find(t => t.id === job.techId);
+      if (oldTech) {
+        const stillHasJobs = jobs.filter(j => j.techId === oldTech.id && j.id !== editingJobId && j.status !== 'done').length;
+        if (!stillHasJobs) oldTech.status = 'free';
+      }
+    }
+    // Assign new tech
+    if (newTechId) {
+      const newTech = technicians.find(t => t.id === newTechId);
+      if (newTech && newTech.status === 'free') newTech.status = 'busy';
+    }
+  }
+
+  // Parse deadline back to storage format
+  const dlInput = document.getElementById('eDeadline').value;
+  let deadlineVal = null;
+  let slaHoursVal = job.slaHours;
+  if (dlInput) {
+    const dlDate = new Date(dlInput);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+    const pad = n => String(n).padStart(2, '0');
+    const timeStr = `${pad(dlDate.getHours())}:${pad(dlDate.getMinutes())}`;
+    if (dlDate.toDateString() === today.toDateString()) {
+      deadlineVal = `TODAY_${timeStr}`;
+    } else if (dlDate.toDateString() === tomorrow.toDateString()) {
+      deadlineVal = `TOMORROW_${timeStr}`;
+    } else {
+      deadlineVal = dlInput;
+    }
+  }
+
+  const slaVal = document.getElementById('eSla').value;
+  const slaHoursMap = { P1: 3, P2: 8, P3: 48 };
+  if (slaVal) slaHoursVal = slaHoursMap[slaVal] || job.slaHours;
+
+  // Apply all changes
+  Object.assign(job, {
+    customer,
+    phone:     document.getElementById('ePhone').value || job.phone,
+    address:   document.getElementById('eAddress').value || job.address,
+    type:      document.getElementById('eType').value,
+    priority:  document.getElementById('ePriority').value,
+    techId:    newTechId,
+    desc:      document.getElementById('eDesc').value,
+    timeStart: document.getElementById('eTimeStart').value || job.timeStart,
+    estEnd:    document.getElementById('eEstEnd').value || job.estEnd,
+    sla:       slaVal || job.sla,
+    slaHours:  slaHoursVal,
+    deadline:  deadlineVal,
+    status:    newTechId ? (job.status === 'waiting' ? 'assigned' : job.status) : 'waiting',
+  });
+
+  closeModal('editJobModal');
+  showToast(`✅ แก้ไข ${editingJobId} เรียบร้อย`, 'success');
+  if (isOnline) api('updateJob', { job });
+  renderDashboard();
+}
+
+function deleteJob() {
+  if (!editingJobId) return;
+  // Use the proper delete modal
+  openDeleteJobModal(editingJobId);
+}
+
+
+// ============================
+// DELETE TECHNICIAN
+// ============================
+let deletingTechId = null;
+
+function confirmDeleteTech(techId) {
+  const tech = technicians.find(t => t.id === techId);
+  if (!tech) return;
+  deletingTechId = techId;
+
+  const activeJobs = jobs.filter(j => (j.techIds && j.techIds.includes(techId)) || j.techId === techId).filter(j => j.status !== 'done');
+
+  document.getElementById('deleteTechInfo').innerHTML = `
+    <div style="width:44px;height:44px;border-radius:12px;background:${tech.color}22;color:${tech.color};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${tech.emoji}</div>
+    <div>
+      <div style="font-weight:700;font-size:15px">${tech.name}</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px">${tech.skill} • ${tech.phone}</div>
+    </div>
+  `;
+
+  const warn = document.getElementById('deleteTechJobWarning');
+  if (activeJobs.length > 0) {
+    warn.innerHTML = `
+      <div style="background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.3);border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px;">
+        ⚠️ ช่างนี้มี <strong style="color:var(--warning)">${activeJobs.length} งาน</strong> ที่ยังค้างอยู่:<br>
+        <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:5px;">
+          ${activeJobs.map(j => `<span class="tag tag-orange">${j.id} — ${j.customer.split(' ')[0]}</span>`).join('')}
+        </div>
+      </div>`;
+  } else {
+    warn.innerHTML = `<div style="background:rgba(34,211,165,0.08);border:1px solid rgba(34,211,165,0.2);border-radius:10px;padding:10px;margin-bottom:14px;font-size:13px;color:var(--success);">✅ ไม่มีงานค้างอยู่</div>`;
+  }
+
+  openModal('deleteTechModal');
+}
+
+function deleteTech() {
+  const tech = technicians.find(t => t.id === deletingTechId);
+  if (!tech) return;
+
+  // Unassign all active jobs from this tech
+  jobs.forEach(j => {
+    if (j.techId === deletingTechId && j.status !== 'done') {
+      j.techId = null;
+      j.status = 'waiting';
+    }
+    if (j.techIds) {
+      j.techIds = j.techIds.filter(id => id !== deletingTechId);
+      if (j.techIds.length > 0 && !j.techId) {
+        j.techId = j.techIds[0];
+      }
+    }
+  });
+
+  technicians = technicians.filter(t => t.id !== deletingTechId);
+  if (isOnline) api('deleteTech', { id: deletingTechId });
+  closeModal('deleteTechModal');
+  showToast(`🗑️ ลบช่าง ${tech.name} เรียบร้อย`, 'info');
+  renderTechs();
+  renderDashboard();
+}
+
+// ============================
+// DELETE JOB (with reason)
+// ============================
+let deletingJobIdFromQueue = null;
+
+function openDeleteJobModal(jobId) {
+  const job = jobs.find(j => j.id === jobId);
+  if (!job) return;
+  deletingJobIdFromQueue = jobId;
+
+  const tech = technicians.find(t => t.id === job.techId);
+  const statusLabels = { waiting:'รอรับงาน', assigned:'Assigned', traveling:'เดินทาง', working:'กำลังทำ', done:'เสร็จแล้ว' };
+
+  document.getElementById('deleteJobInfo').innerHTML = `
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;color:var(--text3);margin-bottom:6px">${job.id}</div>
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px">${job.customer}</div>
+    <div style="font-size:12px;color:var(--text2)">${job.type} ${job.mode ? '• ' + job.mode : ''}</div>
+    ${tech ? `<div style="margin-top:6px;font-size:12px;color:var(--text2)">ช่าง: <span style="color:${tech.color}">${tech.emoji} ${tech.name}</span></div>` : ''}
+    <div style="margin-top:6px"><span class="status-badge status-${job.status}" style="font-size:11px">${statusLabels[job.status]||job.status}</span></div>
+  `;
+
+  // Reset reason
+  document.querySelectorAll('.cancel-reason-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+  document.getElementById('cancelNote').value = '';
+
+  closeModal('jobDetailModal');
+  closeModal('editJobModal');
+  openModal('deleteJobModal');
+}
+
+function selectCancelReason(el) {
+  document.querySelectorAll('.cancel-reason-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function confirmDeleteJob() {
+  const job = jobs.find(j => j.id === deletingJobIdFromQueue);
+  if (!job) return;
+
+  const reason = document.querySelector('.cancel-reason-btn.active')?.dataset.value || 'ไม่ระบุ';
+
+  // Free up tech
+  if (job.techId) {
+    const tech = technicians.find(t => t.id === job.techId);
+    if (tech) {
+      const stillHas = jobs.filter(j => j.id !== deletingJobIdFromQueue && j.techId === tech.id && j.status !== 'done').length;
+      if (!stillHas) tech.status = 'free';
+    }
+  }
+
+  const deletedId = deletingJobIdFromQueue;
+  jobs = jobs.filter(j => j.id !== deletedId);
+  if (isOnline) api('deleteJob', { id: deletedId });
+  closeModal('deleteJobModal');
+  showToast(`🗑️ ยกเลิกงาน ${deletedId} (${reason}) เรียบร้อย`, 'info');
+  renderDashboard();
+  renderQueue();
+  updateQueueBadge();
+}
+
+// ============================
+// INIT
+// ============================
+setDate();
+renderDashboard();
+// ลองโหลดจาก Google Sheet (ถ้ามี API URL)
+if (API_URL && !API_URL.includes('YOUR_APPS_SCRIPT')) {
+  loadFromSheet();
+}
+</script>
+
+
+</body></html>
