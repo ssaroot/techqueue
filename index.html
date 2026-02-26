@@ -1813,7 +1813,7 @@ const API_URL = 'https://script.google.com/a/macros/push.co.th/s/AKfycbytmL-4Gmy
 let isOnline = false; // false = ใช้ข้อมูล dummy, true = ใช้ Google Sheet จริง
 
 async function api(action, payload = {}) {
-  if (!API_URL || API_URL.includes('https://script.google.com/a/macros/push.co.th/s/AKfycbytmL-4Gmy0p1bvvJt0EJ7xtlvB6FQduaNl3T_rIxNEg4bMHrnVWDVKhVpBB_WKJmKA/exec')) return null;
+  if (!API_URL || API_URL.includes('YOUR_APPS_SCRIPT')) return null;
   try {
     const res = await fetch(API_URL + '?action=' + action, {
       method: 'POST',
